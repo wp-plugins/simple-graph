@@ -6,7 +6,7 @@ Requires at least: 2.0.1
 Tested up to: 2.1.3
 Stable tag: 0.9.7
 
-Draws a line graph of single set of date related data. Graph can be made public (i.e. sidebar) and the data can be manipulated through dashboard.
+Draws a line graph of single set of date related data. Graph can be made public (i.e. sidebar widget) and the data can be manipulated through dashboard.
 
 == Description ==
 
