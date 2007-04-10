@@ -4,9 +4,31 @@ Plugin Name: Simple Graph
 Plugin URI: http://www.pasi.fi/simple-graph-wordpress-plugin/
 Description: Administrator modules for simple graph tool. Requires Wordpress 2.0 or newer, and GD graphics library.
 Author: Pasi Matilainen
-Version: 0.9.6
+Version: 0.9.7
 Author URI: http://www.pasi.fi/
 */ 
+
+function widget_pjm_graph_init() {
+	if (!function_exists('register_sidebar_widget'))
+		return;
+	function widget_pjm_graph_widget($args) {
+		global $wpdb;
+		$title = get_option('pjm_graph_title');
+		if ($title=="") $title = null;
+		extract($args);
+		?>
+			<?php echo $before_widget; ?>
+				<?php if ($title!=null) {
+					echo $before_title
+					. $title
+					. $after_title; } ?>
+					<?php pjm_graph(); ?>
+			<?php echo $after_widget; ?>
+		<?php
+	}
+	register_sidebar_widget('Simple Graph','widget_pjm_graph_widget');
+}
+add_action('plugins_loaded','widget_pjm_graph_init');
 
 function pjm_graph($x=0,$y=0,$trend=FALSE,$target=FALSE,$ytd=FALSE,$lm=FALSE,$wkly=FALSE) {
 $width = get_option('pjm_graph_width');
@@ -213,6 +235,7 @@ function pjm_show_settings_panel() {
 if (isset($_POST['graph_update'])) { ?>
 <div class="updated"><p><strong><?php _e('Settings updated.'); 
 ?></strong></p></div><?php
+update_option('pjm_graph_title',$_POST['graph_title']);
 update_option('pjm_graph_width',$_POST['graph_width']);
 update_option('pjm_graph_height',$_POST['graph_height']);
 update_option('pjm_graph_bgcolor',$_POST['graph_bgcol']);
@@ -239,6 +262,11 @@ else if (function_exists('imagejpeg')) { echo "JPG"; } else { echo "N/A"; } ?>
 <fieldset class="options">
 <legend><?php _e('Graphical layout'); ?></legend>
 <table class="editform optiontable">
+<tr>
+<th scope="row"><?php _e('Widget title'); ?>:</th>
+<td><input name="graph_title" type="text" id="graph_title" class="code" 
+value="<?php echo get_option('pjm_graph_title'); ?>" size="20" 
+/></td></tr>
 <tr>
 <th scope="row"><?php _e('Graph width'); ?>:</th>
 <td><input name="graph_width" type="text" id="graph_width" class="code" 

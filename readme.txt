@@ -3,8 +3,8 @@ Contributors: pacius
 Donate link: http://www.pasi.fi/simple-graph-wordpress-plugin/
 Tags: graph, chart, weight loss
 Requires at least: 2.0.1
-Tested up to: 2.0.4
-Stable tag: 0.9.6
+Tested up to: 2.1.3
+Stable tag: 0.9.7
 
 Draws a line graph of single set of date related data. Graph can be made public (i.e. sidebar) and the data can be manipulated through dashboard.
 
