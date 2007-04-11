@@ -26,7 +26,18 @@ function widget_pjm_graph_init() {
 			<?php echo $after_widget; ?>
 		<?php
 	}
-	register_sidebar_widget('Simple Graph','widget_pjm_graph_widget');
+	register_sidebar_widget(array('Simple Graph','widgets'),'widget_pjm_graph_widget');
+	
+	function widget_pjm_graph_control() {
+		$widget_title = get_option('pjm_graph_title');
+		if ($_POST['pjm_graph_submit']) {
+			$widget_title = strip_tags(stripslashes($_POST['pjm_graph_title']));
+			update_option('pjm_graph_title',$widget_title);
+		}
+		echo '<p style="text-align:right;"><label for="pjm_graph_title">' . __('Title:') .' <input style="width:200px;" id="pjm_graph_title" name="pjm_graph_title" type="text" value="' . $widget_title . '" /></label></p>';
+		echo '<input type="hidden" id="pjm_graph_submit" name="pjm_graph_submit" value="1" />';
+	}
+	register_widget_control(array('Simple Graph','widgets'),'widget_pjm_graph_control',300,100);
 }
 add_action('plugins_loaded','widget_pjm_graph_init');
 
