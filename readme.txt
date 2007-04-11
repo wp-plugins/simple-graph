@@ -1,16 +1,15 @@
 === Plugin Name ===
 Contributors: pacius
-Donate link: http://www.pasi.fi/simple-graph-wordpress-plugin/
-Tags: graph, chart, weight loss
+Tags: graph, chart, weight loss, widget
 Requires at least: 2.0.1
 Tested up to: 2.1.3
 Stable tag: 0.9.7
 
-Draws a line graph of single set of date related data. Graph can be made public (i.e. sidebar) and the data can be manipulated through dashboard.
+Draws a line graph of single set of date related data. Graph can be made public (i.e. sidebar widget) and the data can be edited through dashboard.
 
 == Description ==
 
-Draws a graph of single set of date related data. Graph can be made public (i.e. sidebar) and the data can be manipulated through dashboard. Many people use this plugin for weight tracking on their blogs (as do I), but it has been used for many other things as well. Only requirement - or rather a constraint - is that the horizontal axis of the graph shows dates. The vertical axis can hold any values.
+Draws a graph of single set of date related data. Graph can be made public (i.e. sidebar widget) and the data can be manipulated through dashboard. Many people use this plugin for weight tracking on their blogs (as do I), but it has been used for many other things as well. Only requirement - or rather a constraint - is that the horizontal axis of the graph shows dates. The vertical axis can hold any values.
 
 == Installation ==
 
