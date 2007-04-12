@@ -3,7 +3,7 @@ Contributors: pacius
 Tags: graph, chart, weight loss, widget
 Requires at least: 2.0.1
 Tested up to: 2.1.3
-Stable tag: 0.9.7
+Stable tag: 0.9.7b
 
 Draws a line graph of single set of date related data. Graph can be made public (i.e. sidebar widget) and the data can be edited through dashboard.
 
@@ -17,12 +17,12 @@ Requires that your PHP installation has GD support enabled. The plugin's configu
 
 First of all, backup your Wordpress files and database! Installation of this plugin shouldn't do any harm, but since I've done absolutely no testing besides using it on my WP 2.0.3 platform, I cannot guarantee it's entirely bug free. Also, this is my first ever WP plugin, which I created both for fun and to learn the art of making plugins. So, this plugin is provided AS IS, and installation and usage of this plugin is entirely at your own risk. I will not assume any responsibility for any possible damages. (Although it still isn't supposed to cause any damages.)
 
-Extract either one of the packages above in your Wordpress plugins folder (wp-content/plugins/) and then activate the plugin through your Wordpress administration. The activation sets up initial configuration options and creates the database table ($table_prefix.'pjm_graph') for the plugin data.
+Extract the zip archive in your Wordpress plugins folder (wp-content/plugins/) and then activate the plugin through your Wordpress dashboard. The activation sets up initial configuration options and creates the database table for the plugin data.
 
-Please make sure that you upload/extract the pjm_graph folder entirely in your plugin folder, and not just the contents of it! Your folder structure should look like this:
+Please make sure that you upload/extract the simple-graph folder entirely in your plugin folder, and not just the contents of it! Your folder structure should look like this:
 
     * wp-content/plugins/
-          o pjm_graph/
+          o simple-graph/
                 + pjm_graph.php
                 + grapher/
                       # graph.php
@@ -58,4 +58,4 @@ If a 1.0 release is ever finished, it will support multiple graphs. However, don
 
 1. Data management page
 2. Plugin configuration page
-
+3. Graph in action

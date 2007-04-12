@@ -4,7 +4,7 @@ Plugin Name: Simple Graph
 Plugin URI: http://www.pasi.fi/simple-graph-wordpress-plugin/
 Description: Administrator modules for simple graph tool. Requires Wordpress 2.0 or newer, and GD graphics library.
 Author: Pasi Matilainen
-Version: 0.9.7
+Version: 0.9.7b
 Author URI: http://www.pasi.fi/
 */ 
 
@@ -50,7 +50,7 @@ $siteurl = get_option('siteurl');
 if ("/"==substr($siteurl,strlen($siteurl)-1)) 
 	$siteurl = substr($siteurl,0,strlen($siteurl)-1);
 ?>
-<img src="<?php echo $siteurl; ?>/wp-content/plugins/pjm_graph/grapher/graph.php?<?php if ($trend) echo "t=1&amp;"; ?><?php if ($ytd) echo "ytd=1&amp;"; if ($lm) echo "lm=1&amp;"; if ($wkly) echo "wkly=1&amp;"; if ($target) echo "l=1&amp;"; ?><?php if ($x!=0) { ?>w=<?php echo $width;?>&amp;h=<?php echo $height; } ?>" width="<?php echo $width; ?>" height="<?php echo $height; ?>" alt="Graph by www.pasi.fi/simple-graph-wordpress-plugin/" style="border:0;" />
+<img src="<?php echo $siteurl; ?>/wp-content/plugins/simple-graph/grapher/graph.php?<?php if ($trend) echo "t=1&amp;"; ?><?php if ($ytd) echo "ytd=1&amp;"; if ($lm) echo "lm=1&amp;"; if ($wkly) echo "wkly=1&amp;"; if ($target) echo "l=1&amp;"; ?><?php if ($x!=0) { ?>w=<?php echo $width;?>&amp;h=<?php echo $height; } ?>" width="<?php echo $width; ?>" height="<?php echo $height; ?>" alt="Graph by www.pasi.fi/simple-graph-wordpress-plugin/" style="border:0;" />
 <?php }
 
 $table_prefix = $wpdb->prefix;
