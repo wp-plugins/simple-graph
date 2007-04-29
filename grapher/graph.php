@@ -20,8 +20,6 @@ if (!function_exists($imageout)) {
 $gwidth = 0; $gheight = 0;
 if (isset($_GET['w'])) $gwidth = $_GET['w'];
 if (isset($_GET['h'])) $gheight = $_GET['h'];
-$show_trend = FALSE;
-if (isset($_GET['t'])&&$_GET['t']=='1') $show_trend = TRUE;
 $start_date = FALSE;
 if (isset($_GET['ytd'])&&$_GET['ytd']=='1') 
 	$start_date = mktime(date("H"),date("i"),date("s"),date("m"),date("d"),date("Y")-1);
@@ -49,11 +47,22 @@ if (!file_exists( dirname(__FILE__) . '/../../../../wp-config.php' )) {
 require_once ( dirname(__FILE__) . '/../../../../wp-config.php' );
 // dirty hack to get wp 2.1 compatibility :)
 $table_prefix = $wpdb->prefix;
-// get date format
-$datefmt = "y/m/d";
-if (get_option('pjm_graph_datefmt'))
-	$datefmt = get_option('pjm_graph_datefmt');
+// get options
+$options = get_option('pjm_graph_options');
+// set default options as necessary
+if (!is_array($options))
+	$options = Array('title' => '', 'text' => '', 'width' => 160, 'height' => 120,
+		'bg_col' => 'FFFFFF', 'fg_col' => '000000', 'line_col' => '0000FF',
+		'bg_line_col' => 'CCCCFF', 'trend_line_col' => '88FF88', 'target_line_col' => 'FF0000',
+		'date_fmt' => 'y/m/d', 'show_text' => TRUE, 'show_title' => TRUE, 'show_trend' => FALSE,
+		'show_target' => FALSE );
 
+// get date format
+$datefmt = $options['date_fmt'];
+// get some options
+$show_trend = $options['show_trend'];
+if (isset($_GET['t'])&&$_GET['t']=='1') $show_trend = TRUE;
+$show_target = $options['show_target'];
 // helper functions
 function getColor($hex,$image) {
 	global $imagecolor;
@@ -64,20 +73,20 @@ function getColor($hex,$image) {
 	return $c;
 }
 function parseConf() {
-	global $gwidth, $gheight, $imagecreate, $imagecolor;
-	$width = get_option('pjm_graph_width');
-	$height = get_option('pjm_graph_height'); 
+	global $gwidth, $gheight, $imagecreate, $imagecolor, $options;
+	$width = $options['width'];
+	$height = $options['height']; 
 	if ($gwidth!=0) $width = $gwidth;
 	if ($gheight!=0) $height = $gheight;
 	$image = $imagecreate($width,$height);
-	$background = getColor(get_option('pjm_graph_bgcolor'),$image); 
-	$foreground = getColor(get_option('pjm_graph_fgcolor'),$image); 
-	$linecol = getColor(get_option('pjm_graph_linecolor'),$image); 
-	$bglinecol = getColor(get_option('pjm_graph_bglinecolor'),$image);
-	$trendcol = $bglinecol;
-	if (get_option('pjm_graph_trendcolor'))
-		$trendcol = getColor(get_option('pjm_graph_trendcolor'),$image);
-	return array($image,$width,$height,$background,$foreground,$linecol,$bglinecol,$trendcol);
+	$background = getColor($options['bg_col'],$image); 
+	$foreground = getColor($options['fg_col'],$image); 
+	$linecol = getColor($options['line_col'],$image); 
+	$bglinecol = getColor($options['bg_line_col'],$image);
+	$trendcol = getColor($options['trend_line_col'],$image);
+	$targetcol = getColor($options['target_line_col'],$image);
+	$target = $options['target'];
+	return array($image,$width,$height,$background,$foreground,$linecol,$bglinecol,$trendcol,$targetcol,$target);
 }
 function parseData() {
 	global $wpdb, $table_prefix, $start_date;
@@ -98,7 +107,7 @@ function parseData() {
 }
 
 // execute
-list($image,$width,$height,$bgcol,$fgcol,$linecol,$bglinecol,$trendcol) = parseConf();
+list($image,$width,$height,$bgcol,$fgcol,$linecol,$bglinecol,$trendcol,$targetcol,$target) = parseConf();
 // background color
 imagefill($image,1,1,$bgcol);
 // parse data
