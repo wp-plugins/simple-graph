@@ -8,6 +8,12 @@ Version: 0.9.7b
 Author URI: http://www.pasi.fi/
 */ 
 
+define('PJM_GRAPH_PLUGIN_PATH', ABSPATH . '/wp-content/plugins/' .
+	dirname(plugin_basename(__FILE__)));
+
+define('PJM_GRAPH_PLUGIN_URL', get_bloginfo('siteurl') . '/wp-content/plugins/'
+	. dirname(plugin_basename(__FILE__)));
+
 function widget_pjm_graph_init() {
 	if (!function_exists('register_sidebar_widget'))
 		return;
@@ -19,7 +25,7 @@ function widget_pjm_graph_init() {
 				'bg_col' => 'FFFFFF', 'fg_col' => '000000', 'line_col' => '0000FF',
 				'bg_line_col' => 'CCCCFF', 'trend_line_col' => '88FF88', 'target_line_col' => 'FF0000',
 				'date_fmt' => 'y/m/d', 'show_text' => TRUE, 'show_title' => TRUE, 'show_trend' => FALSE,
-				'show_target' => FALSE );
+				'show_target' => FALSE, 'show_hl_graph' => TRUE );
 		$title = $options['title'];
 		if ($title=="") 
 			$title = null;
@@ -105,10 +111,12 @@ function widget_pjm_graph_init() {
 				'bg_col' => 'FFFFFF', 'fg_col' => '000000', 'line_col' => '0000FF',
 				'bg_line_col' => 'CCCCFF', 'trend_line_col' => '88FF88', 'target_line_col' => 'FF0000',
 				'date_fmt' => 'y/m/d', 'show_text' => TRUE, 'show_title' => TRUE, 'show_trend' => FALSE,
-				'show_target' => FALSE );
+				'show_target' => FALSE, 'show_hl_graph' => TRUE );
 		if ($_POST['pjm_graph_submit']) {
-			$options['title']	= stripslashes($_POST['pjm_graph_title']);
+			$options['title']	= strip_tags(stripslashes($_POST['pjm_graph_title']));
 			$options['text']	= stripslashes($_POST['pjm_graph_text']);
+			if ( !current_user_can('unfiltered_html') )
+				$options['text'] = stripslashes(wp_filter_post_kses($options['text']));
 			$options['target']	= strip_tags(stripslashes($_POST['pjm_graph_target']));
 			$options['width']	= strip_tags(stripslashes($_POST['pjm_graph_width']));
 			$options['height']	= strip_tags(stripslashes($_POST['pjm_graph_height']));
@@ -123,16 +131,20 @@ function widget_pjm_graph_init() {
 			$options['show_text']	= isset($_POST['pjm_graph_show_text']) ? TRUE : FALSE;
 			$options['show_target']	= isset($_POST['pjm_graph_show_target']) ? TRUE : FALSE;
 			$options['show_trend']	= isset($_POST['pjm_graph_show_trend']) ? TRUE : FALSE;
+			$options['show_hl_graph'] = isset($_POST['pjm_graph_show_hl_graph']) ? TRUE : FALSE;
 			update_option('pjm_graph_options',$options);
 		}
+		$options['title'] = htmlspecialchars($options['title'], ENT_QUOTES);
+		$options['text'] = htmlspecialchars($options['text'], ENT_QUOTES);
 		echo '<p style="text-align:right;">';
 		echo 'Tags available for title and text: %CURRENT, %HIGH, %LOW, %START, %TARGET, %FIRST_DATE, %LAST_DATE<br />';
-		echo '<label for="pjm_graph_title">' . __('Title:') .' <input style="width:200px;" id="pjm_graph_title" name="pjm_graph_title" type="text" value="' . htmlentities($options['title']) . '" /></label><br />';
-		echo '<label for="pjm_graph_text">' . __('Text:') .' <textarea style="width:200px;height:60px" id="pjm_graph_text" name="pjm_graph_text">' . htmlentities($options['text']) . '</textarea></label><br />';
+		echo '<label for="pjm_graph_title">' . __('Title:') .' <input style="width:200px;" id="pjm_graph_title" name="pjm_graph_title" type="text" value="' . $options['title'] . '" /></label><br />';
+		echo '<label for="pjm_graph_text">' . __('Text: ') . (current_user_can('unfiltered_html') ? __('(HTML OK)') : __('(Plain text)')) .' <textarea style="width:200px;height:60px" id="pjm_graph_text" name="pjm_graph_text">' . $options['text'] . '</textarea></label><br />';
 		echo '<label for="pjm_graph_show_title">' . __('Show title:') .' <input type="checkbox" id="pjm_graph_show_title" name="pjm_graph_show_title" ' . ($options['show_title'] ? 'checked="checked"' : '') . ' /></label><br />';
 		echo '<label for="pjm_graph_show_text">' . __('Show text:') .' <input type="checkbox" id="pjm_graph_show_text" name="pjm_graph_show_text" ' . ($options['show_text'] ? 'checked="checked"' : '') . ' /></label><br />';
 		echo '<label for="pjm_graph_show_trend">' . __('Show trend line:') .' <input type="checkbox" id="pjm_graph_show_trend" name="pjm_graph_show_trend" ' . ($options['show_trend'] ? 'checked="checked"' : '') . ' /></label><br />';
 		echo '<label for="pjm_graph_show_target">' . __('Show target line:') .' <input type="checkbox" id="pjm_graph_show_target" name="pjm_graph_show_target" ' . ($options['show_target'] ? 'checked="checked"' : '') . ' /></label><br />';
+		echo '<label for="pjm_graph_show_hl_graph">' . __('Show high/low in graph:') .' <input type="checkbox" id="pjm_graph_show_hl_graph" name="pjm_graph_show_hl_graph" ' . ($options['show_hl_graph'] ? 'checked="checked"' : '') . ' /></label><br />';
 		echo '<label for="pjm_graph_target">' . __('Target:') .' <input style="width:80px;" id="pjm_graph_target" name="pjm_graph_target" type="text" value="' . $options['target'] . '" /></label><br />';
 		echo '<label for="pjm_graph_width">' . __('Width:') .' <input style="width:80px;" id="pjm_graph_width" name="pjm_graph_width" type="text" value="' . $options['width'] . '" /></label><br />';
 		echo '<label for="pjm_graph_height">' . __('Height:') .' <input style="width:80px;" id="pjm_graph_height" name="pjm_graph_height" type="text" value="' . $options['height'] . '" /></label><br />';
@@ -177,7 +189,7 @@ if (!is_array($options))
 		'bg_col' => 'FFFFFF', 'fg_col' => '000000', 'line_col' => '0000FF',
 		'bg_line_col' => 'CCCCFF', 'trend_line_col' => '88FF88', 'target_line_col' => 'FF0000',
 		'date_fmt' => 'y/m/d', 'show_text' => TRUE, 'show_title' => TRUE, 'show_trend' => FALSE,
-		'show_target' => FALSE );
+		'show_target' => FALSE, 'show_hl_graph' => TRUE );
 $width = $options['width'];
 $height = $options['height'];
 if ($x!=0) $width = $x;
@@ -186,7 +198,7 @@ $siteurl = get_option('siteurl');
 if ("/"==substr($siteurl,strlen($siteurl)-1)) 
 	$siteurl = substr($siteurl,0,strlen($siteurl)-1);
 ?>
-<img src="<?php echo $siteurl; ?>/wp-content/plugins/simple-graph/grapher/graph.php?<?php if ($trend) echo "t=1&amp;"; ?><?php if ($ytd) echo "ytd=1&amp;"; if ($lm) echo "lm=1&amp;"; if ($wkly) echo "wkly=1&amp;"; if ($target) echo "l=1&amp;"; ?><?php if ($x!=0) { ?>w=<?php echo $width;?>&amp;h=<?php echo $height; } ?>" width="<?php echo $width; ?>" height="<?php echo $height; ?>" alt="Graph by www.pasi.fi/simple-graph-wordpress-plugin/" style="border:0;" />
+<img src="<?php echo PJM_GRAPH_PLUGIN_URL; ?>/grapher/graph.php?<?php if ($trend) echo "t=1&amp;"; ?><?php if ($ytd) echo "ytd=1&amp;"; if ($lm) echo "lm=1&amp;"; if ($wkly) echo "wkly=1&amp;"; if ($target) echo "l=1&amp;"; ?><?php if ($x!=0) { ?>w=<?php echo $width;?>&amp;h=<?php echo $height; } ?>" width="<?php echo $width; ?>" height="<?php echo $height; ?>" alt="Graph by www.pasi.fi/simple-graph-wordpress-plugin/" style="border:0;" />
 <?php }
 
 function pjm_graph_install() {

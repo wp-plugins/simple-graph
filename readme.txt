@@ -3,7 +3,7 @@ Contributors: pacius
 Tags: graph, chart, weight loss, widget
 Requires at least: 2.0.1
 Tested up to: 2.1.3
-Stable tag: 0.9.7b
+Stable tag: 0.9.8
 
 Draws a line graph of single set of date related data. Graph can be made public (i.e. sidebar widget) and the data can be edited through dashboard.
 
@@ -27,7 +27,7 @@ Please make sure that you upload/extract the simple-graph folder entirely in you
                 + grapher/
                       # graph.php
 
-Finally, insert a code similar to the one below to your Wordpress theme, for example in the sidebar.php file. The essential part is calling the pjm_graph() function.
+Finally, insert a code similar to the one below to your Wordpress theme, for example in the sidebar.php file. The essential part is calling the pjm_graph() function. Note! If you are using widgets, of course you don't need to edit any files.
 
 `<?php if (function_exists('pjm_graph')) { ?>
 <li><h2>The Project</h2>
@@ -57,5 +57,14 @@ If a 1.0 release is ever finished, it will support multiple graphs. However, don
 == Screenshots ==
 
 1. Data management page
-2. Plugin configuration page
-3. Graph in action
+2. Widget control panel
+3. Widget in action
+
+== Change log ==
+
+= 0.9.8 =
+
+* Added configurable title and text to widget. Both can contain wildcards which are replaced by values such as highest value, lowest value, et cetera.
+* Extended widget control panel significantly.
+* Removed old plugin configuration page as it was redundant.
+* Bug fix: plugin now works even if plugin folder name is changed.

@@ -55,7 +55,7 @@ if (!is_array($options))
 		'bg_col' => 'FFFFFF', 'fg_col' => '000000', 'line_col' => '0000FF',
 		'bg_line_col' => 'CCCCFF', 'trend_line_col' => '88FF88', 'target_line_col' => 'FF0000',
 		'date_fmt' => 'y/m/d', 'show_text' => TRUE, 'show_title' => TRUE, 'show_trend' => FALSE,
-		'show_target' => FALSE );
+		'show_target' => FALSE, 'show_hl_graph' => TRUE );
 
 // get date format
 $datefmt = $options['date_fmt'];
@@ -63,6 +63,7 @@ $datefmt = $options['date_fmt'];
 $show_trend = $options['show_trend'];
 if (isset($_GET['t'])&&$_GET['t']=='1') $show_trend = TRUE;
 $show_target = $options['show_target'];
+$show_highlow = $options['show_hl_graph'];
 // helper functions
 function getColor($hex,$image) {
 	global $imagecolor;
@@ -240,11 +241,11 @@ if ( $datalines = $wpdb->get_results($sql) ) {
 	$tx = $x - 12.5;
 	if ($tx>($width-2-25)) $tx = $width - 2 - 25;
 	if ($tx<22) $tx = 22;
-	if (!$lowvalue_shown&&$todays_point==$lowvalue) {
+	if ($show_highlow&&!$lowvalue_shown&&$todays_point==$lowvalue) {
 		imagestring($image,1,$tx,$y+3,sprintf("% 5.1f",$lowvalue),$fgcol);
 		$lowvalue_shown = TRUE;
 	}
-	if (!$highvalue_shown&&$todays_point==$highvalue) {
+	if ($show_highlow&&!$highvalue_shown&&$todays_point==$highvalue) {
 		imagestring($image,1,$tx,$y-10,sprintf("% 5.1f",$highvalue),$fgcol);
 		$highvalue_shown = TRUE;
 	}
