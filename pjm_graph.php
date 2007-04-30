@@ -4,7 +4,7 @@ Plugin Name: Simple Graph
 Plugin URI: http://www.pasi.fi/simple-graph-wordpress-plugin/
 Description: Administrator modules for simple graph tool. Requires Wordpress 2.0 or newer, and GD graphics library.
 Author: Pasi Matilainen
-Version: 0.9.7b
+Version: 0.9.8
 Author URI: http://www.pasi.fi/
 */ 
 
