@@ -4,7 +4,7 @@ Plugin Name: Simple Graph
 Plugin URI: http://www.pasi.fi/simple-graph-wordpress-plugin/
 Description: Administrator modules for simple graph tool. Requires Wordpress 2.0 or newer, and GD graphics library.
 Author: Pasi Matilainen
-Version: 0.9.8b
+Version: 0.9.8c
 Author URI: http://www.pasi.fi/
 */ 
 
@@ -202,8 +202,8 @@ if ("/"==substr($siteurl,strlen($siteurl)-1))
 <?php }
 
 function pjm_graph_install() {
-	global $wpdb, $user_level;
-	if ($user_level!=10) return;
+	global $wpdb;
+	if (!current_user_can('activate_plugins')) return;
 	$table_name = $wpdb->prefix . 'pjm_graph';
 	if ( $wpdb->get_var("show tables like '$table_name'") != $table_name ) {
 		$sql = "CREATE TABLE $table_name (
@@ -226,9 +226,9 @@ function pjm_managePanel() {
 add_action('admin_menu','pjm_managePanel');
 
 function pjm_show_manage_panel() {
-global $wpdb, $user_level;
+global $wpdb;
 $table_prefix = $wpdb->prefix;
-if ($user_level<5) return;
+if (!current_user_can('edit_pages')) { echo "Insufficient role level. You need to be an Editor."; return; }
 if (isset($_GET['pjm_graph_delete'])) { ?>
 <div class="updated"><p><strong><?php _e('Data deleted.'); 
 ?></strong></p></div><?php
