@@ -18,8 +18,10 @@ if (!function_exists($imageout)) {
 }
 // get size and params
 $uid = FALSE; $tid = FALSE;
+$number = 1;
 if (isset($_GET['uid'])) $uid = $_GET['uid'];
 if (isset($_GET['tid'])) $tid = $_GET['tid'];
+if (isset($_GET['n'])) $number = $_GET['n'];
 $gwidth = 0; $gheight = 0;
 if (isset($_GET['w'])) $gwidth = $_GET['w'];
 if (isset($_GET['h'])) $gheight = $_GET['h'];
@@ -53,23 +55,23 @@ $table_prefix = $wpdb->prefix;
 // get options
 $options = get_option('pjm_graph_options');
 // set default options as necessary
-if (!is_array($options))
-	$options = Array('title' => '', 'text' => '', 'width' => 160, 'height' => 120,
+if (!is_array($options[$number]))
+	$options[$number] = Array('title' => '', 'text' => '', 'width' => 160, 'height' => 120,
 		'bg_col' => 'FFFFFF', 'fg_col' => '000000', 'line_col' => '0000FF',
 		'bg_line_col' => 'CCCCFF', 'trend_line_col' => '88FF88', 'target_line_col' => 'FF0000',
 		'date_fmt' => 'y/m/d', 'show_text' => TRUE, 'show_title' => TRUE, 'show_trend' => FALSE,
 		'show_target' => FALSE, 'show_hl_graph' => TRUE, 'user_id' => 1, 'table_id' => 1 );
 if ($uid===FALSE)
-	$uid = $options['user_id'];
+	$uid = $options[$number]['user_id'];
 if ($tid===FALSE)
-	$tid = $options['table_id'];
+	$tid = $options[$number]['table_id'];
 // get date format
-$datefmt = $options['date_fmt'];
+$datefmt = $options[$number]['date_fmt'];
 // get some options
-$show_trend = $options['show_trend'];
+$show_trend = $options[$number]['show_trend'];
 if (isset($_GET['t'])&&$_GET['t']=='1') $show_trend = TRUE;
-$show_target = $options['show_target'];
-$show_highlow = $options['show_hl_graph'];
+$show_target = $options[$number]['show_target'];
+$show_highlow = $options[$number]['show_hl_graph'];
 // helper functions
 function getColor($hex,$image) {
 	global $imagecolor;
@@ -80,19 +82,19 @@ function getColor($hex,$image) {
 	return $c;
 }
 function parseConf() {
-	global $gwidth, $gheight, $imagecreate, $imagecolor, $options;
-	$width = $options['width'];
-	$height = $options['height']; 
+	global $gwidth, $gheight, $imagecreate, $imagecolor, $options, $number;
+	$width = $options[$number]['width'];
+	$height = $options[$number]['height']; 
 	if ($gwidth!=0) $width = $gwidth;
 	if ($gheight!=0) $height = $gheight;
 	$image = $imagecreate($width,$height);
-	$background = getColor($options['bg_col'],$image); 
-	$foreground = getColor($options['fg_col'],$image); 
-	$linecol = getColor($options['line_col'],$image); 
-	$bglinecol = getColor($options['bg_line_col'],$image);
-	$trendcol = getColor($options['trend_line_col'],$image);
-	$targetcol = getColor($options['target_line_col'],$image);
-	$target = $options['target'];
+	$background = getColor($options[$number]['bg_col'],$image); 
+	$foreground = getColor($options[$number]['fg_col'],$image); 
+	$linecol = getColor($options[$number]['line_col'],$image); 
+	$bglinecol = getColor($options[$number]['bg_line_col'],$image);
+	$trendcol = getColor($options[$number]['trend_line_col'],$image);
+	$targetcol = getColor($options[$number]['target_line_col'],$image);
+	$target = $options[$number]['target'];
 	return array($image,$width,$height,$background,$foreground,$linecol,$bglinecol,$trendcol,$targetcol,$target);
 }
 function parseData() {

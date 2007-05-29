@@ -4,7 +4,7 @@ Plugin Name: Simple Graph
 Plugin URI: http://www.pasi.fi/simple-graph-wordpress-plugin/
 Description: Administrator modules for simple graph tool. Requires Wordpress 2.0 or newer, and GD graphics library.
 Author: Pasi Matilainen
-Version: 0.9.9.alpha
+Version: 1.0.0
 Author URI: http://www.pasi.fi/
 */ 
 
@@ -14,45 +14,48 @@ define('PJM_GRAPH_PLUGIN_PATH', ABSPATH . '/wp-content/plugins/' .
 define('PJM_GRAPH_PLUGIN_URL', get_bloginfo('wpurl') . '/wp-content/plugins/'
 	. dirname(plugin_basename(__FILE__)));
 
+$simple_graph_version		= "0.9.9";
+$simple_graph_db_version	= "1.0";
+
 function widget_pjm_graph_init() {
 	if (!function_exists('register_sidebar_widget'))
 		return;
-	function widget_pjm_graph_widget($args) {
+	function widget_pjm_graph_widget($args, $number = 1) {
 		global $wpdb;
+		extract($args);
 		$options = get_option('pjm_graph_options');
-		if (!is_array($options))
-			$options = Array('title' => '', 'text' => '', 'width' => 160, 'height' => 120,
+		if (!is_array($options[$number]))
+			$options[$number] = Array('title' => '', 'text' => '', 'width' => 160, 'height' => 120,
 				'bg_col' => 'FFFFFF', 'fg_col' => '000000', 'line_col' => '0000FF',
 				'bg_line_col' => 'CCCCFF', 'trend_line_col' => '88FF88', 'target_line_col' => 'FF0000',
 				'date_fmt' => 'y/m/d', 'show_text' => TRUE, 'show_title' => TRUE, 'show_trend' => FALSE,
 				'show_target' => FALSE, 'show_hl_graph' => TRUE, 'user_id' => 1, 'table_id' => 1 );
-		$title = $options['title'];
+		$title = $options[$number]['title'];
 		if ($title=="") 
 			$title = null;
-		if (!$options['show_title'])
+		if (!$options[$number]['show_title'])
 			$title = null;
 		$tags = null;
-		if (($options['show_title']&&strpos($options['title'],"%")!==FALSE)||
-			($options['show_text'])&&strpos($options['text'],"%")!==FALSE)
-			$tags = pjm_graph_get_tags($options['user_id'],$options['table_id']);
+		if (($options[$number]['show_title']&&strpos($options[$number]['title'],"%")!==FALSE)||
+			($options[$number]['show_text'])&&strpos($options[$number]['text'],"%")!==FALSE)
+			$tags = pjm_graph_get_tags($options[$number]['user_id'],$options[$number]['table_id']);
 		if (is_array($tags)) {
-			$tags['target'] = $options['target'];
-			$tags['first_date'] = date($options['date_fmt'],$tags['first_date']);
-			$tags['last_date'] = date($options['date_fmt'],$tags['last_date']);
+			$tags['target'] = $options[$number]['target'];
+			$tags['first_date'] = date($options[$number]['date_fmt'],$tags['first_date']);
+			$tags['last_date'] = date($options[$number]['date_fmt'],$tags['last_date']);
 		}
-		extract($args);
 		?>
 			<?php echo $before_widget; ?>
 				<?php if ($title!=null) {
 					echo $before_title
 					. pjm_graph_tags($title,$tags)
 					. $after_title; } ?>
-					<p><?php pjm_graph(); ?></p>
-					<?php if ($options['show_text']) echo pjm_graph_tags($options['text'],$tags); ?>
+					<p><?php pjm_graph($number); ?></p>
+					<?php if ($options[$number]['show_text']) echo pjm_graph_tags($options[$number]['text'],$tags); ?>
 			<?php echo $after_widget; ?>
 		<?php
 	}
-	register_sidebar_widget(array('Simple Graph','widgets'),'widget_pjm_graph_widget');
+	//register_sidebar_widget(array('Simple Graph','widgets'),'widget_pjm_graph_widget');
 
 	function pjm_graph_get_tags($uid,$tid) {
 		global $wpdb;
@@ -104,42 +107,46 @@ function widget_pjm_graph_init() {
 		return $col;
 	}
 	
-	function widget_pjm_graph_control() {
+	function widget_pjm_graph_control($number) {
 		global $wpdb;
 		$options = get_option('pjm_graph_options');
-		if (!is_array($options))
-			$options = Array('title' => '', 'text' => '', 'width' => 160, 'height' => 120,
+		if (!is_array($options[$number]))
+			$options[$number] = Array('title' => '', 'text' => '', 'width' => 160, 'height' => 120,
 				'bg_col' => 'FFFFFF', 'fg_col' => '000000', 'line_col' => '0000FF',
 				'bg_line_col' => 'CCCCFF', 'trend_line_col' => '88FF88', 'target_line_col' => 'FF0000',
 				'date_fmt' => 'y/m/d', 'show_text' => TRUE, 'show_title' => TRUE, 'show_trend' => FALSE,
 				'show_target' => FALSE, 'show_hl_graph' => TRUE, 'user_id' => 1, 'table_id' => 1 );
-		if ($_POST['pjm_graph_submit']) {
-			$options['title']	= strip_tags(stripslashes($_POST['pjm_graph_title']));
-			$options['text']	= stripslashes($_POST['pjm_graph_text']);
+		$newoptions = $options;
+		if ($_POST['pjm_graph_submit-'.$number]) {
+			$newoptions[$number]['title']	= strip_tags(stripslashes($_POST['pjm_graph_title-'.$number]));
+			$newoptions[$number]['text']	= stripslashes($_POST['pjm_graph_text-'.$number]);
 			if ( !current_user_can('unfiltered_html') )
-				$options['text'] = stripslashes(wp_filter_post_kses($options['text']));
-			$options['target']	= strip_tags(stripslashes($_POST['pjm_graph_target']));
-			$options['width']	= strip_tags(stripslashes($_POST['pjm_graph_width']));
-			$options['height']	= strip_tags(stripslashes($_POST['pjm_graph_height']));
-			$options['bg_col']	= format_color($_POST['pjm_graph_bg_col']);
-			$options['fg_col']	= format_color($_POST['pjm_graph_fg_col']);
-			$options['line_col']	= format_color($_POST['pjm_graph_line_col']);
-			$options['bg_line_col']	= format_color($_POST['pjm_graph_bg_line_col']);
-			$options['trend_line_col']	= format_color($_POST['pjm_graph_trend_line_col']);
-			$options['target_line_col']	= format_color($_POST['pjm_graph_target_line_col']);
-			$options['date_fmt']	= stripslashes($_POST['pjm_graph_date_fmt']);
-			list ($options['user_id'],$options['table_id']) = explode(":",$_POST['pjm_graph_user_table_id']);
-			$options['show_title']	= isset($_POST['pjm_graph_show_title']) ? TRUE : FALSE;
-			$options['show_text']	= isset($_POST['pjm_graph_show_text']) ? TRUE : FALSE;
-			$options['show_target']	= isset($_POST['pjm_graph_show_target']) ? TRUE : FALSE;
-			$options['show_trend']	= isset($_POST['pjm_graph_show_trend']) ? TRUE : FALSE;
-			$options['show_hl_graph'] = isset($_POST['pjm_graph_show_hl_graph']) ? TRUE : FALSE;
+				$newoptions[$number]['text'] = stripslashes(wp_filter_post_kses($newoptions[$number]['text']));
+			$newoptions[$number]['target']	= strip_tags(stripslashes($_POST['pjm_graph_target-'.$number]));
+			$newoptions[$number]['width']	= strip_tags(stripslashes($_POST['pjm_graph_width-'.$number]));
+			$newoptions[$number]['height']	= strip_tags(stripslashes($_POST['pjm_graph_height-'.$number]));
+			$newoptions[$number]['bg_col']	= format_color($_POST['pjm_graph_bg_col-'.$number]);
+			$newoptions[$number]['fg_col']	= format_color($_POST['pjm_graph_fg_col-'.$number]);
+			$newoptions[$number]['line_col']	= format_color($_POST['pjm_graph_line_col-'.$number]);
+			$newoptions[$number]['bg_line_col']	= format_color($_POST['pjm_graph_bg_line_col-'.$number]);
+			$newoptions[$number]['trend_line_col']	= format_color($_POST['pjm_graph_trend_line_col-'.$number]);
+			$newoptions[$number]['target_line_col']	= format_color($_POST['pjm_graph_target_line_col-'.$number]);
+			$newoptions[$number]['date_fmt']	= stripslashes($_POST['pjm_graph_date_fmt-'.$number]);
+			list ($newoptions[$number]['user_id'],$newoptions[$number]['table_id']) = explode(":",$_POST['pjm_graph_user_table_id-'.$number]);
+			$newoptions[$number]['show_title']	= isset($_POST['pjm_graph_show_title-'.$number]) ? TRUE : FALSE;
+			$newoptions[$number]['show_text']	= isset($_POST['pjm_graph_show_text-'.$number]) ? TRUE : FALSE;
+			$newoptions[$number]['show_target']	= isset($_POST['pjm_graph_show_target-'.$number]) ? TRUE : FALSE;
+			$newoptions[$number]['show_trend']	= isset($_POST['pjm_graph_show_trend-'.$number]) ? TRUE : FALSE;
+			$newoptions[$number]['show_hl_graph'] = isset($_POST['pjm_graph_show_hl_graph-'.$number]) ? TRUE : FALSE;
+		}
+		if ($newoptions != $options) {
+			$options = $newoptions;
 			update_option('pjm_graph_options',$options);
 		}
-		$options['title'] = htmlspecialchars($options['title'], ENT_QUOTES);
-		$options['text'] = htmlspecialchars($options['text'], ENT_QUOTES);
+		$options[$number]['title'] = htmlspecialchars($options[$number]['title'], ENT_QUOTES);
+		$options[$number]['text'] = htmlspecialchars($options[$number]['text'], ENT_QUOTES);
 		echo '<p style="text-align:right;">';
-		echo '<label for="pjm_graph_user_table_id">' . __('Graph owner and #:') . ' <select id="pjm_graph_user_table_id" name="pjm_graph_user_table_id">';
+		echo '<label for="pjm_graph_user_table_id-'.$number.'">' . __('Graph owner and #:') . ' <select id="pjm_graph_user_table_id-'.$number.'" name="pjm_graph_user_table_id-'.$number.'">';
 		// get all authors
 		$author_sql = "SELECT * FROM {$wpdb->prefix}users;";
 		$authors = $wpdb->get_results($author_sql);
@@ -149,31 +156,31 @@ function widget_pjm_graph_init() {
 			$tables = $wpdb->get_results($table_sql);
 			foreach ($tables as $table) {
 				$sel = '';
-				if ( $options['user_id'] == $author->ID && $options['table_id'] == $table->table_id )
+				if ( $options[$number]['user_id'] == $author->ID && $options[$number]['table_id'] == $table->table_id )
 					$sel = ' selected="selected"';
 				echo '<option value="'.$author->ID.':'.$table->table_id.'"'.$sel.'>'.$author->display_name.' / '.$table->table_id.'</option>';
 			}
 		}
 		echo '</select><br />';
 		echo 'Tags available for title and text: %CURRENT, %HIGH, %LOW, %START, %TARGET, %FIRST_DATE, %LAST_DATE<br />';
-		echo '<label for="pjm_graph_title">' . __('Title:') .' <input style="width:200px;" id="pjm_graph_title" name="pjm_graph_title" type="text" value="' . $options['title'] . '" /></label><br />';
-		echo '<label for="pjm_graph_text">' . __('Text: ') . (current_user_can('unfiltered_html') ? __('(HTML OK)') : __('(Plain text)')) .' <textarea style="width:220px;height:100px" id="pjm_graph_text" name="pjm_graph_text">' . $options['text'] . '</textarea></label><br />';
-		echo '<label for="pjm_graph_show_title">' . __('Show title:') .' <input type="checkbox" id="pjm_graph_show_title" name="pjm_graph_show_title" ' . ($options['show_title'] ? 'checked="checked"' : '') . ' /></label><br />';
-		echo '<label for="pjm_graph_show_text">' . __('Show text:') .' <input type="checkbox" id="pjm_graph_show_text" name="pjm_graph_show_text" ' . ($options['show_text'] ? 'checked="checked"' : '') . ' /></label><br />';
-		echo '<label for="pjm_graph_show_trend">' . __('Show trend line:') .' <input type="checkbox" id="pjm_graph_show_trend" name="pjm_graph_show_trend" ' . ($options['show_trend'] ? 'checked="checked"' : '') . ' /></label><br />';
-		echo '<label for="pjm_graph_show_target">' . __('Show target line:') .' <input type="checkbox" id="pjm_graph_show_target" name="pjm_graph_show_target" ' . ($options['show_target'] ? 'checked="checked"' : '') . ' /></label><br />';
-		echo '<label for="pjm_graph_show_hl_graph">' . __('Show high/low in graph:') .' <input type="checkbox" id="pjm_graph_show_hl_graph" name="pjm_graph_show_hl_graph" ' . ($options['show_hl_graph'] ? 'checked="checked"' : '') . ' /></label><br />';
-		echo '<label for="pjm_graph_target">' . __('Target:') .' <input style="width:80px;" id="pjm_graph_target" name="pjm_graph_target" type="text" value="' . $options['target'] . '" /></label><br />';
-		echo '<label for="pjm_graph_width">' . __('Width:') .' <input style="width:80px;" id="pjm_graph_width" name="pjm_graph_width" type="text" value="' . $options['width'] . '" /></label><br />';
-		echo '<label for="pjm_graph_height">' . __('Height:') .' <input style="width:80px;" id="pjm_graph_height" name="pjm_graph_height" type="text" value="' . $options['height'] . '" /></label><br />';
-		echo '<label for="pjm_graph_bg_col">' . __('Background color:') .' <input style="width:80px;" id="pjm_graph_bg_col" name="pjm_graph_bg_col" type="text" value="' . $options['bg_col'] . '" /></label><br />';
-		echo '<label for="pjm_graph_fg_col">' . __('Foreground color:') .' <input style="width:80px;" id="pjm_graph_fg_col" name="pjm_graph_fg_col" type="text" value="' . $options['fg_col'] . '" /></label><br />';
-		echo '<label for="pjm_graph_line_col">' . __('Line color:') .' <input style="width:80px;" id="pjm_graph_line_col" name="pjm_graph_line_col" type="text" value="' . $options['line_col'] . '" /></label><br />';
-		echo '<label for="pjm_graph_bg_line_col">' . __('Background line color:') .' <input style="width:80px;" id="pjm_graph_bg_line_col" name="pjm_graph_bg_line_col" type="text" value="' . $options['bg_line_col'] . '" /></label><br />';
-		echo '<label for="pjm_graph_trend_line_col">' . __('Trend line color:') .' <input style="width:80px;" id="pjm_graph_trend_line_col" name="pjm_graph_trend_line_col" type="text" value="' . $options['trend_line_col'] . '" /></label><br />';
-		echo '<label for="pjm_graph_target_line_col">' . __('Target line color:') .' <input style="width:80px;" id="pjm_graph_target_line_col" name="pjm_graph_target_line_col" type="text" value="' . $options['target_line_col'] . '" /></label><br />';
-		echo '<label for="pjm_graph_date_fmt">' . __('Date format:') . ' <select name="pjm_graph_date_fmt" id="pjm_graph_date_fmt">';
-		$defaultfmt = $options['date_fmt'];
+		echo '<label for="pjm_graph_title-'.$number.'">' . __('Title:') .' <input style="width:200px;" id="pjm_graph_title-'.$number.'" name="pjm_graph_title-'.$number.'" type="text" value="' . $options[$number]['title'] . '" /></label><br />';
+		echo '<label for="pjm_graph_text-'.$number.'">' . __('Text: ') . (current_user_can('unfiltered_html') ? __('(HTML OK)') : __('(Plain text)')) .' <textarea style="width:220px;height:100px" id="pjm_graph_text-'.$number.'" name="pjm_graph_text-'.$number.'">' . $options[$number]['text'] . '</textarea></label><br />';
+		echo '<label for="pjm_graph_show_title-'.$number.'">' . __('Show title:') .' <input type="checkbox" id="pjm_graph_show_title-'.$number.'" name="pjm_graph_show_title-'.$number.'" ' . ($options[$number]['show_title'] ? 'checked="checked"' : '') . ' /></label><br />';
+		echo '<label for="pjm_graph_show_text-'.$number.'">' . __('Show text:') .' <input type="checkbox" id="pjm_graph_show_text-'.$number.'" name="pjm_graph_show_text-'.$number.'" ' . ($options[$number]['show_text'] ? 'checked="checked"' : '') . ' /></label><br />';
+		echo '<label for="pjm_graph_show_trend-'.$number.'">' . __('Show trend line:') .' <input type="checkbox" id="pjm_graph_show_trend-'.$number.'" name="pjm_graph_show_trend-'.$number.'" ' . ($options[$number]['show_trend'] ? 'checked="checked"' : '') . ' /></label><br />';
+		echo '<label for="pjm_graph_show_target-'.$number.'">' . __('Show target line:') .' <input type="checkbox" id="pjm_graph_show_target-'.$number.'" name="pjm_graph_show_target-'.$number.'" ' . ($options[$number]['show_target'] ? 'checked="checked"' : '') . ' /></label><br />';
+		echo '<label for="pjm_graph_show_hl_graph-'.$number.'">' . __('Show high/low in graph:') .' <input type="checkbox" id="pjm_graph_show_hl_graph-'.$number.'" name="pjm_graph_show_hl_graph-'.$number.'" ' . ($options[$number]['show_hl_graph'] ? 'checked="checked"' : '') . ' /></label><br />';
+		echo '<label for="pjm_graph_target-'.$number.'">' . __('Target:') .' <input style="width:80px;" id="pjm_graph_target-'.$number.'" name="pjm_graph_target-'.$number.'" type="text" value="' . $options[$number]['target'] . '" /></label><br />';
+		echo '<label for="pjm_graph_width-'.$number.'">' . __('Width:') .' <input style="width:80px;" id="pjm_graph_width-'.$number.'" name="pjm_graph_width-'.$number.'" type="text" value="' . $options[$number]['width'] . '" /></label><br />';
+		echo '<label for="pjm_graph_height-'.$number.'">' . __('Height:') .' <input style="width:80px;" id="pjm_graph_height-'.$number.'" name="pjm_graph_height-'.$number.'" type="text" value="' . $options[$number]['height'] . '" /></label><br />';
+		echo '<label for="pjm_graph_bg_col-'.$number.'">' . __('Background color:') .' <input style="width:80px;" id="pjm_graph_bg_col-'.$number.'" name="pjm_graph_bg_col-'.$number.'" type="text" value="' . $options[$number]['bg_col'] . '" /></label><br />';
+		echo '<label for="pjm_graph_fg_col-'.$number.'">' . __('Foreground color:') .' <input style="width:80px;" id="pjm_graph_fg_col-'.$number.'" name="pjm_graph_fg_col-'.$number.'" type="text" value="' . $options[$number]['fg_col'] . '" /></label><br />';
+		echo '<label for="pjm_graph_line_col-'.$number.'">' . __('Line color:') .' <input style="width:80px;" id="pjm_graph_line_col-'.$number.'" name="pjm_graph_line_col-'.$number.'" type="text" value="' . $options[$number]['line_col'] . '" /></label><br />';
+		echo '<label for="pjm_graph_bg_line_col-'.$number.'">' . __('Background line color:') .' <input style="width:80px;" id="pjm_graph_bg_line_col-'.$number.'" name="pjm_graph_bg_line_col-'.$number.'" type="text" value="' . $options[$number]['bg_line_col'] . '" /></label><br />';
+		echo '<label for="pjm_graph_trend_line_col-'.$number.'">' . __('Trend line color:') .' <input style="width:80px;" id="pjm_graph_trend_line_col-'.$number.'" name="pjm_graph_trend_line_col-'.$number.'" type="text" value="' . $options[$number]['trend_line_col'] . '" /></label><br />';
+		echo '<label for="pjm_graph_target_line_col-'.$number.'">' . __('Target line color:') .' <input style="width:80px;" id="pjm_graph_target_line_col-'.$number.'" name="pjm_graph_target_line_col-'.$number.'" type="text" value="' . $options[$number]['target_line_col'] . '" /></label><br />';
+		echo '<label for="pjm_graph_date_fmt-'.$number.'">' . __('Date format:') . ' <select name="pjm_graph_date_fmt-'.$number.'" id="pjm_graph_date_fmt-'.$number.'">';
+		$defaultfmt = $options[$number]['date_fmt'];
 		$formats = Array( "d.m.y", "d.m.Y", "y/m/d", "Y/m/d", "y-m-d", "Y-m-d", "d/M/y", "d/M/Y", "D/m/y", "D/M/y" );
 		foreach ($formats as $fmt) {
 			$sel = "";
@@ -182,7 +189,7 @@ function widget_pjm_graph_init() {
 		}
 		echo '</select>';
 		echo '</p>';
-		echo '<input type="hidden" id="pjm_graph_submit" name="pjm_graph_submit" value="1" />';
+		echo '<input type="hidden" id="pjm_graph_submit-'.$number.'" name="pjm_graph_submit-'.$number.'" value="1" />';
 		?>
 <p style="text-align:right;"><b>Compatibility check:</b><br />
 PHP Version: <?php echo phpversion(); ?><br />
@@ -196,7 +203,54 @@ else if (function_exists('imagejpeg')) { echo "JPG"; } else { echo "N/A"; } ?>
 </p>
 <?php
 	}
-	register_widget_control(array('Simple Graph','widgets'),'widget_pjm_graph_control',400,620);
+	
+	function widget_pjm_graph_setup() {
+		$options = $newoptions = get_option('pjm_graph_options');
+		if ( isset($_POST['pjm-graph-number-submit']) ) {
+			$number = (int) $_POST['pjm-graph-number'];
+			if ( $number > 9 ) $number = 9;
+			if ( $number < 1 ) $number = 1;
+			$newoptions['number'] = $number;
+		}
+		if ( $options != $newoptions ) {
+			$options = $newoptions;
+			update_option('pjm_graph_options', $options);
+			widget_pjm_graph_register($options['number']);
+		}
+	}
+	
+	function widget_pjm_graph_page() {
+		$options = $newoptions = get_option('pjm_graph_options');
+	?>
+		<div class="wrap">
+			<form method="POST">
+				<h2><?php _e('Simple Graph Widgets', 'widgets'); ?></h2>
+				<p style="line-height: 30px;"><?php _e('How many Simple Graph widgets would you like?', 'widgets'); ?>
+				<select id="pjm-graph-number" name="pjm-graph-number" value="<?php echo $options['number']; ?>">
+	<?php for ( $i = 1; $i < 10; ++$i ) echo "<option value='$i' ".($options['number']==$i ? "selected='selected'" : '').">$i</option>"; ?>
+				</select>
+				<span class="submit"><input type="submit" name="pjm-graph-number-submit" id="pjm-graph-number-submit" value="<?php _e('Save'); ?>" /></span></p>
+			</form>
+		</div>
+	<?php
+	}
+
+	function widget_pjm_graph_register() {
+		$options = get_option('pjm_graph_options');
+		$number = $options['number'];
+		if ( $number < 1 ) $number = 1;
+		if ( $number > 9 ) $number = 9;
+		for ($i = 1; $i <= 9; $i++) {
+			$name = array('Simple Graph %s', 'widgets', $i);
+			register_sidebar_widget($name, $i <= $number ? 'widget_pjm_graph_widget' : /* unregister */ '', '', $i);
+			register_widget_control($name, $i <= $number ? 'widget_pjm_graph_control' : /* unregister */ '', 400, 620, $i);
+		}
+		add_action('sidebar_admin_setup', 'widget_pjm_graph_setup');
+		add_action('sidebar_admin_page', 'widget_pjm_graph_page');
+	}
+	
+	widget_pjm_graph_register();
+	//register_widget_control(array('Simple Graph','widgets'),'widget_pjm_graph_control',400,620);
 	
 	// add filter
 	add_filter('the_content', 'simple_graph_filter');
@@ -208,13 +262,13 @@ else if (function_exists('imagejpeg')) { echo "JPG"; } else { echo "N/A"; } ?>
 			$breakpoint = strpos( $simplegraph, "]]" ) + 2;
 			$simplegraph = substr($simplegraph, 0, $breakpoint);
 			$params = explode(" ",$simplegraph);
-			$options = array ( 'x' => 0, 'y' => 0, 'trend' => false, 'target' => false,
+			$options = array ( 'n' => 1, 'x' => 0, 'y' => 0, 'trend' => false, 'target' => false,
 				'ytd' => false, 'lm' => false, 'wkly' => false, 'uid' => false, 'gid' => false );
 			foreach ($params as $param) {
 				list ($name, $value) = explode("=",$param);
 				$options[$name] = $value;
 			}
-			$img_tag = pjm_graph($options['x'],$options['y'],$options['trend'],$options['target'],
+			$img_tag = pjm_graph($options['n'],$options['x'],$options['y'],$options['trend'],$options['target'],
 				$options['ytd'],$options['lm'],$options['wkly'],$options['uid'],$options['gid'],true);
 			$content = str_replace($simplegraph, $img_tag, $content);
 		}
@@ -224,26 +278,26 @@ else if (function_exists('imagejpeg')) { echo "JPG"; } else { echo "N/A"; } ?>
 }
 add_action('plugins_loaded','widget_pjm_graph_init');
 
-function pjm_graph($x=0,$y=0,$trend=FALSE,$target=FALSE,$ytd=FALSE,$lm=FALSE,$wkly=FALSE,$user_id=0,$table_id=0,$only_return_tag=FALSE) {
+function pjm_graph($number=1,$x=0,$y=0,$trend=FALSE,$target=FALSE,$ytd=FALSE,$lm=FALSE,$wkly=FALSE,$user_id=0,$table_id=0,$only_return_tag=FALSE) {
 $options = get_option('pjm_graph_options');
-if (!is_array($options))
-	$options = Array('title' => '', 'text' => '', 'width' => 160, 'height' => 120,
+if (!is_array($options[$number]))
+	$options[$number] = Array('title' => '', 'text' => '', 'width' => 160, 'height' => 120,
 		'bg_col' => 'FFFFFF', 'fg_col' => '000000', 'line_col' => '0000FF',
 		'bg_line_col' => 'CCCCFF', 'trend_line_col' => '88FF88', 'target_line_col' => 'FF0000',
 		'date_fmt' => 'y/m/d', 'show_text' => TRUE, 'show_title' => TRUE, 'show_trend' => FALSE,
 		'show_target' => FALSE, 'show_hl_graph' => TRUE, 'user_id' => 1, 'table_id' => 1 );
-$width = $options['width'];
-$height = $options['height'];
-$uid = $options['user_id'];
-$tid = $options['table_id'];
+$width = $options[$number]['width'];
+$height = $options[$number]['height'];
+$uid = $options[$number]['user_id'];
+$tid = $options[$number]['table_id'];
 if ($x!=0) $width = $x;
 if ($y!=0) $height = $y;
 if ($user_id!=0) $uid = $user_id;
 if ($table_id!=0) $tid = $table_id;
-$siteurl = get_option('siteurl');
-if ("/"==substr($siteurl,strlen($siteurl)-1)) 
-	$siteurl = substr($siteurl,0,strlen($siteurl)-1);
-$img_tag = '<img src="'.PJM_GRAPH_PLUGIN_URL.'/grapher/graph.php?uid='.$uid.'&amp;tid='.$tid.'&amp;'; 
+//$siteurl = get_option('siteurl');
+//if ("/"==substr($siteurl,strlen($siteurl)-1)) 
+//	$siteurl = substr($siteurl,0,strlen($siteurl)-1);
+$img_tag = '<img src="'.PJM_GRAPH_PLUGIN_URL.'/grapher/graph.php?n='.$number.'&amp;uid='.$uid.'&amp;tid='.$tid.'&amp;'; 
 	if ($trend) $img_tag .= "t=1&amp;"; 
 	if ($ytd) $img_tag .= "ytd=1&amp;"; 
 	if ($lm) $img_tag .= "lm=1&amp;"; 
@@ -260,6 +314,8 @@ function pjm_graph_install() {
 	global $wpdb;
 	if (!current_user_can('activate_plugins')) return;
 	$table_name = $wpdb->prefix . 'simple_graph';
+
+	// if simple_graph table doesn't exist, create it
 	if ( $wpdb->get_var("show tables like '$table_name'") != $table_name ) {
 		$sql = "CREATE TABLE $table_name (
 			id int PRIMARY KEY AUTO_INCREMENT,
@@ -269,20 +325,21 @@ function pjm_graph_install() {
 			value double NOT NULL)";
 		require_once(ABSPATH . 'wp-admin/upgrade-functions.php');
 		dbDelta($sql);
-	}
-	$old_table = $wpdb->prefix . 'pjm_graph';
-	if ( $wpdb->get_var("show tables like '$old_table'") == $old_table ) {
+
 		// if pjm_graph table exists, i.e. we're upgrading from 0.9.8c or earlier version
 		// copy values from that table to the new table, for current user's table one
-		global $current_user;
-		$user_id = $current_user->data->ID;
-		$old_data_sql = "SELECT * FROM $old_table";
-		$old_data = $wpdb->get_results($old_data_sql);
-		foreach ($old_data as $old_row) {
-			$stamp = $old_row->stamp;
-			$value = $old_row->value;
-			$insert_sql = "INSERT INTO $table_name (user_id,table_id,stamp,value) values ($user_id,1,$stamp,$value);";
-			$wpdb->query($insert_sql);
+		$old_table = $wpdb->prefix . 'pjm_graph';
+		if ( $wpdb->get_var("show tables like '$old_table'") == $old_table ) {
+			global $current_user;
+			$user_id = $current_user->data->ID;
+			$old_data_sql = "SELECT * FROM $old_table";
+			$old_data = $wpdb->get_results($old_data_sql);
+			foreach ($old_data as $old_row) {
+				$stamp = $old_row->stamp;
+				$value = $old_row->value;
+				$insert_sql = "INSERT INTO $table_name (user_id,table_id,stamp,value) values ($user_id,1,$stamp,$value);";
+				$wpdb->query($insert_sql);
+			}
 		}
 	}
 }
