@@ -4,7 +4,7 @@ Plugin Name: Simple Graph
 Plugin URI: http://www.pasi.fi/simple-graph-wordpress-plugin/
 Description: Administrator modules for simple graph tool. Requires Wordpress 2.0 or newer, and GD graphics library.
 Author: Pasi Matilainen
-Version: 0.9.8c
+Version: 0.9.9.alpha
 Author URI: http://www.pasi.fi/
 */ 
 
@@ -25,7 +25,7 @@ function widget_pjm_graph_init() {
 				'bg_col' => 'FFFFFF', 'fg_col' => '000000', 'line_col' => '0000FF',
 				'bg_line_col' => 'CCCCFF', 'trend_line_col' => '88FF88', 'target_line_col' => 'FF0000',
 				'date_fmt' => 'y/m/d', 'show_text' => TRUE, 'show_title' => TRUE, 'show_trend' => FALSE,
-				'show_target' => FALSE, 'show_hl_graph' => TRUE );
+				'show_target' => FALSE, 'show_hl_graph' => TRUE, 'user_id' => 1, 'table_id' => 1 );
 		$title = $options['title'];
 		if ($title=="") 
 			$title = null;
@@ -34,7 +34,7 @@ function widget_pjm_graph_init() {
 		$tags = null;
 		if (($options['show_title']&&strpos($options['title'],"%")!==FALSE)||
 			($options['show_text'])&&strpos($options['text'],"%")!==FALSE)
-			$tags = pjm_graph_get_tags();
+			$tags = pjm_graph_get_tags($options['user_id'],$options['table_id']);
 		if (is_array($tags)) {
 			$tags['target'] = $options['target'];
 			$tags['first_date'] = date($options['date_fmt'],$tags['first_date']);
@@ -54,14 +54,14 @@ function widget_pjm_graph_init() {
 	}
 	register_sidebar_widget(array('Simple Graph','widgets'),'widget_pjm_graph_widget');
 
-	function pjm_graph_get_tags() {
+	function pjm_graph_get_tags($uid,$tid) {
 		global $wpdb;
 		$tags = array();
-		$table = $wpdb->prefix . 'pjm_graph';
+		$table = $wpdb->prefix . 'simple_graph';
 		
 		$sql = "SELECT MAX(stamp) AS highdate, MIN(stamp) AS lowdate, "
 			 . "MAX(value) AS highvalue, MIN(value) AS lowvalue "
-			 . "FROM $table";
+			 . "FROM $table WHERE user_id=$uid AND table_id=$tid;";
 		if ( $valueset = $wpdb->get_results($sql) ) {
 			foreach ($valueset as $values) {
 				$tags['high'] = $values->highvalue;
@@ -105,13 +105,14 @@ function widget_pjm_graph_init() {
 	}
 	
 	function widget_pjm_graph_control() {
+		global $wpdb;
 		$options = get_option('pjm_graph_options');
 		if (!is_array($options))
 			$options = Array('title' => '', 'text' => '', 'width' => 160, 'height' => 120,
 				'bg_col' => 'FFFFFF', 'fg_col' => '000000', 'line_col' => '0000FF',
 				'bg_line_col' => 'CCCCFF', 'trend_line_col' => '88FF88', 'target_line_col' => 'FF0000',
 				'date_fmt' => 'y/m/d', 'show_text' => TRUE, 'show_title' => TRUE, 'show_trend' => FALSE,
-				'show_target' => FALSE, 'show_hl_graph' => TRUE );
+				'show_target' => FALSE, 'show_hl_graph' => TRUE, 'user_id' => 1, 'table_id' => 1 );
 		if ($_POST['pjm_graph_submit']) {
 			$options['title']	= strip_tags(stripslashes($_POST['pjm_graph_title']));
 			$options['text']	= stripslashes($_POST['pjm_graph_text']);
@@ -127,6 +128,7 @@ function widget_pjm_graph_init() {
 			$options['trend_line_col']	= format_color($_POST['pjm_graph_trend_line_col']);
 			$options['target_line_col']	= format_color($_POST['pjm_graph_target_line_col']);
 			$options['date_fmt']	= stripslashes($_POST['pjm_graph_date_fmt']);
+			list ($options['user_id'],$options['table_id']) = explode(":",$_POST['pjm_graph_user_table_id']);
 			$options['show_title']	= isset($_POST['pjm_graph_show_title']) ? TRUE : FALSE;
 			$options['show_text']	= isset($_POST['pjm_graph_show_text']) ? TRUE : FALSE;
 			$options['show_target']	= isset($_POST['pjm_graph_show_target']) ? TRUE : FALSE;
@@ -137,9 +139,25 @@ function widget_pjm_graph_init() {
 		$options['title'] = htmlspecialchars($options['title'], ENT_QUOTES);
 		$options['text'] = htmlspecialchars($options['text'], ENT_QUOTES);
 		echo '<p style="text-align:right;">';
+		echo '<label for="pjm_graph_user_table_id">' . __('Graph owner and #:') . ' <select id="pjm_graph_user_table_id" name="pjm_graph_user_table_id">';
+		// get all authors
+		$author_sql = "SELECT * FROM {$wpdb->prefix}users;";
+		$authors = $wpdb->get_results($author_sql);
+		foreach ($authors as $author) {
+			// get all tables for this user
+			$table_sql = "SELECT DISTINCT(table_id) FROM {$wpdb->prefix}simple_graph WHERE user_id={$author->ID} ORDER BY table_id ASC;";
+			$tables = $wpdb->get_results($table_sql);
+			foreach ($tables as $table) {
+				$sel = '';
+				if ( $options['user_id'] == $author->ID && $options['table_id'] == $table->table_id )
+					$sel = ' selected="selected"';
+				echo '<option value="'.$author->ID.':'.$table->table_id.'"'.$sel.'>'.$author->display_name.' / '.$table->table_id.'</option>';
+			}
+		}
+		echo '</select><br />';
 		echo 'Tags available for title and text: %CURRENT, %HIGH, %LOW, %START, %TARGET, %FIRST_DATE, %LAST_DATE<br />';
 		echo '<label for="pjm_graph_title">' . __('Title:') .' <input style="width:200px;" id="pjm_graph_title" name="pjm_graph_title" type="text" value="' . $options['title'] . '" /></label><br />';
-		echo '<label for="pjm_graph_text">' . __('Text: ') . (current_user_can('unfiltered_html') ? __('(HTML OK)') : __('(Plain text)')) .' <textarea style="width:200px;height:60px" id="pjm_graph_text" name="pjm_graph_text">' . $options['text'] . '</textarea></label><br />';
+		echo '<label for="pjm_graph_text">' . __('Text: ') . (current_user_can('unfiltered_html') ? __('(HTML OK)') : __('(Plain text)')) .' <textarea style="width:220px;height:100px" id="pjm_graph_text" name="pjm_graph_text">' . $options['text'] . '</textarea></label><br />';
 		echo '<label for="pjm_graph_show_title">' . __('Show title:') .' <input type="checkbox" id="pjm_graph_show_title" name="pjm_graph_show_title" ' . ($options['show_title'] ? 'checked="checked"' : '') . ' /></label><br />';
 		echo '<label for="pjm_graph_show_text">' . __('Show text:') .' <input type="checkbox" id="pjm_graph_show_text" name="pjm_graph_show_text" ' . ($options['show_text'] ? 'checked="checked"' : '') . ' /></label><br />';
 		echo '<label for="pjm_graph_show_trend">' . __('Show trend line:') .' <input type="checkbox" id="pjm_graph_show_trend" name="pjm_graph_show_trend" ' . ($options['show_trend'] ? 'checked="checked"' : '') . ' /></label><br />';
@@ -178,40 +196,94 @@ else if (function_exists('imagejpeg')) { echo "JPG"; } else { echo "N/A"; } ?>
 </p>
 <?php
 	}
-	register_widget_control(array('Simple Graph','widgets'),'widget_pjm_graph_control',300,560);
+	register_widget_control(array('Simple Graph','widgets'),'widget_pjm_graph_control',400,620);
+	
+	// add filter
+	add_filter('the_content', 'simple_graph_filter');
+	
+	// def filter
+	function simple_graph_filter($content = '') {
+		while ( strpos(strtolower($content), '[[simple-graph') !== FALSE ) {
+			$simplegraph = substr( $content, strpos(strtolower($content), '[[simple-graph') );
+			$breakpoint = strpos( $simplegraph, "]]" ) + 2;
+			$simplegraph = substr($simplegraph, 0, $breakpoint);
+			$params = explode(" ",$simplegraph);
+			$options = array ( 'x' => 0, 'y' => 0, 'trend' => false, 'target' => false,
+				'ytd' => false, 'lm' => false, 'wkly' => false, 'uid' => false, 'gid' => false );
+			foreach ($params as $param) {
+				list ($name, $value) = explode("=",$param);
+				$options[$name] = $value;
+			}
+			$img_tag = pjm_graph($options['x'],$options['y'],$options['trend'],$options['target'],
+				$options['ytd'],$options['lm'],$options['wkly'],$options['uid'],$options['gid'],true);
+			$content = str_replace($simplegraph, $img_tag, $content);
+		}
+		return $content;
+	}
+
 }
 add_action('plugins_loaded','widget_pjm_graph_init');
 
-function pjm_graph($x=0,$y=0,$trend=FALSE,$target=FALSE,$ytd=FALSE,$lm=FALSE,$wkly=FALSE) {
+function pjm_graph($x=0,$y=0,$trend=FALSE,$target=FALSE,$ytd=FALSE,$lm=FALSE,$wkly=FALSE,$user_id=0,$table_id=0,$only_return_tag=FALSE) {
 $options = get_option('pjm_graph_options');
 if (!is_array($options))
 	$options = Array('title' => '', 'text' => '', 'width' => 160, 'height' => 120,
 		'bg_col' => 'FFFFFF', 'fg_col' => '000000', 'line_col' => '0000FF',
 		'bg_line_col' => 'CCCCFF', 'trend_line_col' => '88FF88', 'target_line_col' => 'FF0000',
 		'date_fmt' => 'y/m/d', 'show_text' => TRUE, 'show_title' => TRUE, 'show_trend' => FALSE,
-		'show_target' => FALSE, 'show_hl_graph' => TRUE );
+		'show_target' => FALSE, 'show_hl_graph' => TRUE, 'user_id' => 1, 'table_id' => 1 );
 $width = $options['width'];
 $height = $options['height'];
+$uid = $options['user_id'];
+$tid = $options['table_id'];
 if ($x!=0) $width = $x;
 if ($y!=0) $height = $y;
+if ($user_id!=0) $uid = $user_id;
+if ($table_id!=0) $tid = $table_id;
 $siteurl = get_option('siteurl');
 if ("/"==substr($siteurl,strlen($siteurl)-1)) 
 	$siteurl = substr($siteurl,0,strlen($siteurl)-1);
-?>
-<img src="<?php echo PJM_GRAPH_PLUGIN_URL; ?>/grapher/graph.php?<?php if ($trend) echo "t=1&amp;"; ?><?php if ($ytd) echo "ytd=1&amp;"; if ($lm) echo "lm=1&amp;"; if ($wkly) echo "wkly=1&amp;"; if ($target) echo "l=1&amp;"; ?><?php if ($x!=0) { ?>w=<?php echo $width;?>&amp;h=<?php echo $height; } ?>" width="<?php echo $width; ?>" height="<?php echo $height; ?>" alt="Graph by www.pasi.fi/simple-graph-wordpress-plugin/" style="border:0;" />
-<?php }
+$img_tag = '<img src="'.PJM_GRAPH_PLUGIN_URL.'/grapher/graph.php?uid='.$uid.'&amp;tid='.$tid.'&amp;'; 
+	if ($trend) $img_tag .= "t=1&amp;"; 
+	if ($ytd) $img_tag .= "ytd=1&amp;"; 
+	if ($lm) $img_tag .= "lm=1&amp;"; 
+	if ($wkly) $img_tag .= "wkly=1&amp;"; 
+	if ($target) $img_tag .= "l=1&amp;";
+	if ($x!=0) $img_tag .= "w=$width&amp;h=$height"; 
+$img_tag .= '" width="'.$width.'" height="'.$height.'" alt="Graph by www.pasi.fi/simple-graph-wordpress-plugin/" style="border:0;" />';
+if (!$only_return_tag)
+	echo $img_tag;
+return $img_tag;
+}
 
 function pjm_graph_install() {
 	global $wpdb;
 	if (!current_user_can('activate_plugins')) return;
-	$table_name = $wpdb->prefix . 'pjm_graph';
+	$table_name = $wpdb->prefix . 'simple_graph';
 	if ( $wpdb->get_var("show tables like '$table_name'") != $table_name ) {
 		$sql = "CREATE TABLE $table_name (
 			id int PRIMARY KEY AUTO_INCREMENT,
+			user_id bigint(20) NOT NULL,
+			table_id int NOT NULL,
 			stamp int NOT NULL,
 			value double NOT NULL)";
 		require_once(ABSPATH . 'wp-admin/upgrade-functions.php');
 		dbDelta($sql);
+	}
+	$old_table = $wpdb->prefix . 'pjm_graph';
+	if ( $wpdb->get_var("show tables like '$old_table'") == $old_table ) {
+		// if pjm_graph table exists, i.e. we're upgrading from 0.9.8c or earlier version
+		// copy values from that table to the new table, for current user's table one
+		global $current_user;
+		$user_id = $current_user->data->ID;
+		$old_data_sql = "SELECT * FROM $old_table";
+		$old_data = $wpdb->get_results($old_data_sql);
+		foreach ($old_data as $old_row) {
+			$stamp = $old_row->stamp;
+			$value = $old_row->value;
+			$insert_sql = "INSERT INTO $table_name (user_id,table_id,stamp,value) values ($user_id,1,$stamp,$value);";
+			$wpdb->query($insert_sql);
+		}
 	}
 }
 
@@ -226,14 +298,14 @@ function pjm_managePanel() {
 add_action('admin_menu','pjm_managePanel');
 
 function pjm_show_manage_panel() {
-global $wpdb;
+global $wpdb, $current_user;
 $table_prefix = $wpdb->prefix;
-if (!current_user_can('edit_pages')) { echo "Insufficient role level. You need to be an Editor."; return; }
+//if (!current_user_can('edit_pages')) { echo "Insufficient role level. You need to be an Editor."; return; }
 if (isset($_GET['pjm_graph_delete'])) { ?>
 <div class="updated"><p><strong><?php _e('Data deleted.'); 
 ?></strong></p></div><?php
 $item_id = $_GET['pjm_graph_delete'];
-$sql = "DELETE FROM ".$table_prefix."pjm_graph WHERE id=".$item_id;
+$sql = "DELETE FROM ".$table_prefix."simple_graph WHERE id=".$item_id." AND user_id=".$current_user->data->ID;
 $wpdb->query($sql);
 }
 if (isset($_POST['pjm_graph_value'])) { ?>
@@ -241,12 +313,14 @@ if (isset($_POST['pjm_graph_value'])) { ?>
 ?></strong></p></div><?php
 // insert data here
 $date = strtotime($_POST['pjm_graph_year']."-".$_POST['pjm_graph_month']."-".$_POST['pjm_graph_day']);
-$value = $_POST['pjm_graph_value'];
-$sql = "INSERT INTO ".$table_prefix."pjm_graph (stamp, value) values ($date,$value)";
+$value = $wpdb->escape($_POST['pjm_graph_value']);
+$table_id = $wpdb->escape($_POST['pjm_graph_table_id']);
+$sql = "INSERT INTO ".$table_prefix."simple_graph (user_id, table_id, stamp, value) values ({$current_user->data->ID},$table_id,$date,$value)";
 $wpdb->query($sql);
 } else if (isset($_POST['batch_insert'])) { ?>
 <div class="updated"><p><strong><?php _e('Batch insert results'); ?></strong></p>
 <p><?php
+$table_id = $wpdb->escape($_POST['pjm_graph_table_id']);
 $lines = explode("\n",$_POST['batch_insert']);
 $accepted = 0; $rejected = 0;
 foreach ($lines as $line) {
@@ -258,7 +332,7 @@ foreach ($lines as $line) {
 		if (count($dateparts)==3) {
 			$date = mktime(0,0,0,$dateparts[1],$dateparts[2],$dateparts[0]);
 			$value = mysql_real_escape_string($parts[1]);
-			$sql = "INSERT INTO ".$table_prefix."pjm_graph (stamp, value) values ($date,$value)";
+			$sql = "INSERT INTO ".$table_prefix."simple_graph (user_id, table_id, stamp, value) values ({$current_user->data->ID},$table_id,$date,$value)";
 			$wpdb->query($sql);
 		} else $reject = TRUE;
 	} else 
@@ -282,6 +356,25 @@ print("Accepted <b>$accepted</b> data points and rejected <b>$rejected</b> data 
 <fieldset class="options">
 <legend><?php _e('Insert new data point'); ?></legend>
 <table class="editform optiontable">
+<tr>
+<th scope="row"><?php _e('Graph#'); ?>:</th>
+<td><select name="pjm_graph_table_id"><?php
+$tables = $wpdb->get_results("SELECT DISTINCT(table_id) FROM {$wpdb->prefix}simple_graph WHERE user_id={$current_user->data->ID} ORDER BY table_id ASC;");
+$high_table = 0;
+foreach ($tables as $table) {
+	$sel = '';
+	if (isset($_POST['pjm_graph_table_id']))
+		if ($table->table_id == $_POST['pjm_graph_table_id'])
+			$sel = ' selected="selected"';
+	echo '<option value="'.$table->table_id.'"'.$sel.'>'.$table->table_id.'</option>';
+	if ($table->table_id>$high_table)
+		$high_table = $table->table_id;
+}
+$high_table++;
+echo '<option value="'.$high_table.'">'.$high_table.' (Create new)</option>';
+?></select>
+</td>
+</tr>
 <tr>
 <th scope="row"><?php _e('Date'); ?>:</th>
 <td>Year: <select name="pjm_graph_year"><?php
@@ -323,6 +416,25 @@ inserted into database without further validation. <b>Therefore, this
 is for advanced users only!</b></p>
 <table class="editform optiontable">
 <tr>
+<th scope="row"><?php _e('Graph#'); ?>:</th>
+<td><select name="pjm_graph_table_id"><?php
+$tables = $wpdb->get_results("SELECT DISTINCT(table_id) FROM {$wpdb->prefix}simple_graph WHERE user_id={$current_user->data->ID} ORDER BY table_id ASC;");
+$high_table = 0;
+foreach ($tables as $table) {
+	$sel = '';
+	if (isset($_POST['pjm_graph_table_id']))
+		if ($table->table_id == $_POST['pjm_graph_table_id'])
+			$sel = ' selected="selected"';
+	echo '<option value="'.$table->table_id.'"'.$sel.'>'.$table->table_id.'</option>';
+	if ($table->table_id>$high_table)
+		$high_table = $table->table_id;
+}
+$high_table++;
+echo '<option value="'.$high_table.'">'.$high_table.' (Create new)</option>';
+?></select>
+</td>
+</tr>
+<tr>
 <th scope="row">Insert dates &amp; values:</th>
 <td><textarea name="batch_insert" rows="10" cols="40"></textarea></td>
 </tr>
@@ -337,14 +449,14 @@ is for advanced users only!</b></p>
 <div class="wrap">
 <h2><?php _e('Data points'); ?></h2>
 <table id="the-list-x" width="50%" cellpadding="3" cellspacing="3">
-<tr><th>ID</th><th><?php _e('Date'); ?></th><th><?php _e('Value'); ?></th></tr>
+<tr><th>Graph#</th><th>ID</th><th><?php _e('Date'); ?></th><th><?php _e('Value'); ?></th></tr>
 <?php
 $offset = 0; $row_count = 50;
 if (isset($_REQUEST['offset']))
 	$offset = mysql_real_escape_string($_REQUEST['offset']);
 if (isset($_REQUEST['rows']))
 	$row_count = mysql_real_escape_string($_REQUEST['rows']);
-$sql = "SELECT * FROM ".$table_prefix."pjm_graph ORDER BY id DESC LIMIT $offset,$row_count";
+$sql = "SELECT * FROM ".$table_prefix."simple_graph WHERE user_id={$current_user->data->ID} ORDER BY table_id DESC, id DESC LIMIT $offset,$row_count";
 if ( $valueset = $wpdb->get_results($sql) ) {
 	$rows = count($valueset);
 	print("<caption>");
@@ -360,6 +472,7 @@ if ( $valueset = $wpdb->get_results($sql) ) {
 	foreach ($valueset as $values) { 
 		$class = ('alternate' == $class) ? '' : 'alternate'; ?>
 <tr id="post-"<?php echo $values->id; ?>" class="<?php echo $class; ?>">
+<td><?php echo $values->table_id; ?></td>
 <td><?php echo $values->id; ?></td>
 <td><?php echo date("Y-m-d",$values->stamp); ?></td>
 <td><?php echo $values->value; ?></td>

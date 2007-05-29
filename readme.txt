@@ -62,6 +62,11 @@ If a 1.0 release is ever finished, it will support multiple graphs. However, don
 
 == Change log ==
 
+= 0.9.9 =
+
+* Added multiple user-sensitive graphs, i.e. each user may have their own graphs
+* Added content filter which allows insertion of graphs to pages and posts
+
 = 0.9.8c =
 
 * Fixed user roles issue, which broke the plugin in WordPress 2.2.
@@ -76,3 +81,20 @@ If a 1.0 release is ever finished, it will support multiple graphs. However, don
 * Extended widget control panel significantly.
 * Removed old plugin configuration page as it was redundant.
 * Bug fix: plugin now works even if plugin folder name is changed.
+
+== Content filter ==
+
+If you want to insert a graph in posts and/or pages, simply write a string similar to following in your post or page.
+
+[[simple-graph x=0 y=0 trend=0 wkly=0 lm=0 ytd=0 uid=0 gid=0 ]]
+
+Just replace the values as you wish. The ones above are default values, and if you don't need to change the default value, you can simply omit that value from the string. I.e. [[simple-graph]] alone produces the graph with default values drawn from widget setup.
+
+* x is width, any positive value is acceptable
+* y is height, any positive value is acceptable
+* trend is whether trend graph is shown, 0 = no, 1 = yes
+* wkly is whether weekly averages are shown, 0 = no, 1 = yes
+* lm is whether only values from last month are shown, 0 = no, 1 = yes
+* ytd is whether only values from last year are shown, 0 = no, 1 = yes
+* uid is user ID of the graph owner (see WordPress dashboard -> Users)
+* gid is user-specific graph number, same as in widget control panel's graph# selection
