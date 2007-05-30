@@ -4,7 +4,7 @@ Plugin Name: Simple Graph
 Plugin URI: http://www.pasi.fi/simple-graph-wordpress-plugin/
 Description: Administrator modules for simple graph tool. Requires Wordpress 2.0 or newer, and GD graphics library.
 Author: Pasi Matilainen
-Version: 1.0.0
+Version: 1.0.1
 Author URI: http://www.pasi.fi/
 */ 
 
@@ -334,7 +334,7 @@ function pjm_graph_install() {
 			$user_id = $current_user->data->ID;
 			$old_data_sql = "SELECT * FROM $old_table";
 			$old_data = $wpdb->get_results($old_data_sql);
-			foreach ($old_data as $old_row) {
+			if (!is_empty($old_data)) foreach ($old_data as $old_row) {
 				$stamp = $old_row->stamp;
 				$value = $old_row->value;
 				$insert_sql = "INSERT INTO $table_name (user_id,table_id,stamp,value) values ($user_id,1,$stamp,$value);";
