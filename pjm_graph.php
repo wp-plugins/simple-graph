@@ -4,7 +4,7 @@ Plugin Name: Simple Graph
 Plugin URI: http://www.pasi.fi/simple-graph-wordpress-plugin/
 Description: Administrator modules for simple graph tool. Requires Wordpress 2.0 or newer, and GD graphics library.
 Author: Pasi Matilainen
-Version: 1.0.1
+Version: 1.0.2
 Author URI: http://www.pasi.fi/
 */ 
 
@@ -14,7 +14,7 @@ define('PJM_GRAPH_PLUGIN_PATH', ABSPATH . '/wp-content/plugins/' .
 define('PJM_GRAPH_PLUGIN_URL', get_bloginfo('wpurl') . '/wp-content/plugins/'
 	. dirname(plugin_basename(__FILE__)));
 
-$simple_graph_version		= "0.9.9";
+$simple_graph_version		= "1.0.2";
 $simple_graph_db_version	= "1.0";
 
 function widget_pjm_graph_init() {
@@ -242,7 +242,7 @@ else if (function_exists('imagejpeg')) { echo "JPG"; } else { echo "N/A"; } ?>
 		if ( $number > 9 ) $number = 9;
 		for ($i = 1; $i <= 9; $i++) {
 			$name = array('Simple Graph %s', 'widgets', $i);
-			register_sidebar_widget($name, $i <= $number ? 'widget_pjm_graph_widget' : /* unregister */ '', '', $i);
+			register_sidebar_widget($name, $i <= $number ? 'widget_pjm_graph_widget' : /* unregister */ '', $i);
 			register_widget_control($name, $i <= $number ? 'widget_pjm_graph_control' : /* unregister */ '', 400, 620, $i);
 		}
 		add_action('sidebar_admin_setup', 'widget_pjm_graph_setup');
