@@ -3,8 +3,8 @@ Contributors: pacius
 Donate link: http://tinyurl.com/3aths7
 Tags: graph, chart, weight loss, widget
 Requires at least: 2.0.1
-Tested up to: 2.2.3
-Stable tag: 1.0.2
+Tested up to: 2.3.1
+Stable tag: 1.0.3
 
 Draws a line graph of single set of date related data. Graph can be made public (i.e. sidebar widget or static page) and the data can be edited through dashboard.
 
@@ -68,6 +68,10 @@ If a 1.0 release is ever finished, it will support multiple graphs. However, don
 3. Widget in action
 
 == Change log ==
+
+= 1.0.3 =
+
+* Fixed widget not showing when PHP register_globals was on.
 
 = 1.0.2 =
 

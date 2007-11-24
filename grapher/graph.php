@@ -17,10 +17,10 @@ if (!function_exists($imageout)) {
 	$imageout = "imagejpeg";
 }
 // get size and params
-$uid = FALSE; $tid = FALSE;
+$owner_uid = FALSE; $table_id = FALSE;
 $number = 1;
-if (isset($_GET['uid'])) $uid = $_GET['uid'];
-if (isset($_GET['tid'])) $tid = $_GET['tid'];
+if (isset($_GET['uid'])) $owner_uid = $_GET['uid'];
+if (isset($_GET['tid'])) $table_id = $_GET['tid'];
 if (isset($_GET['n'])) $number = $_GET['n'];
 $gwidth = 0; $gheight = 0;
 if (isset($_GET['w'])) $gwidth = $_GET['w'];
@@ -61,10 +61,10 @@ if (!is_array($options[$number]))
 		'bg_line_col' => 'CCCCFF', 'trend_line_col' => '88FF88', 'target_line_col' => 'FF0000',
 		'date_fmt' => 'y/m/d', 'show_text' => TRUE, 'show_title' => TRUE, 'show_trend' => FALSE,
 		'show_target' => FALSE, 'show_hl_graph' => TRUE, 'user_id' => 1, 'table_id' => 1 );
-if ($uid===FALSE)
-	$uid = $options[$number]['user_id'];
-if ($tid===FALSE)
-	$tid = $options[$number]['table_id'];
+if ($owner_uid===FALSE)
+	$owner_uid = $options[$number]['user_id'];
+if ($table_id===FALSE)
+	$table_id = $options[$number]['table_id'];
 // get date format
 $datefmt = $options[$number]['date_fmt'];
 // get some options
@@ -98,10 +98,10 @@ function parseConf() {
 	return array($image,$width,$height,$background,$foreground,$linecol,$bglinecol,$trendcol,$targetcol,$target);
 }
 function parseData() {
-	global $wpdb, $table_prefix, $start_date, $uid, $tid;
+	global $wpdb, $table_prefix, $start_date, $owner_uid, $table_id;
 	$sql = "SELECT MAX(stamp) AS highdate, MIN(stamp) AS lowdate, "
 	     . "MAX(value) AS highvalue, MIN(value) AS lowvalue "
-	     . "FROM ".$table_prefix."simple_graph WHERE user_id=$uid AND table_id=$tid";
+	     . "FROM ".$table_prefix."simple_graph WHERE user_id=$owner_uid AND table_id=$table_id";
 	if ($start_date !== FALSE)
 		$sql .= " WHERE stamp > $start_date";
 	if ( $valueset = $wpdb->get_results($sql) ) {
@@ -192,7 +192,7 @@ $lowpoint_shown = FALSE; $highpoint_shown = FALSE;
 $date_clause = "";
 if ($start_date!==FALSE)
 	$date_clause = " WHERE stamp > $start_date ";
-$sql = "SELECT * FROM ".$table_prefix."simple_graph $date_clause WHERE user_id=$uid AND table_id=$tid ORDER BY stamp ASC";
+$sql = "SELECT * FROM ".$table_prefix."simple_graph $date_clause WHERE user_id=$owner_uid AND table_id=$table_id ORDER BY stamp ASC";
 if ( $datalines = $wpdb->get_results($sql) ) {
     if (count($datalines)<2)
 	error_msg("Not enough data to generate graph.","At least two data points must be inserted.");
