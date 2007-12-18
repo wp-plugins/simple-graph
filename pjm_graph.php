@@ -4,7 +4,7 @@ Plugin Name: Simple Graph
 Plugin URI: http://www.pasi.fi/simple-graph-wordpress-plugin/
 Description: Administrator modules for simple graph tool. Requires Wordpress 2.0 or newer, and GD graphics library.
 Author: Pasi Matilainen
-Version: 1.0.4
+Version: 1.0.5
 Author URI: http://www.pasi.fi/
 */ 
 
@@ -14,7 +14,7 @@ define('PJM_GRAPH_PLUGIN_PATH', ABSPATH . '/wp-content/plugins/' .
 define('PJM_GRAPH_PLUGIN_URL', get_bloginfo('wpurl') . '/wp-content/plugins/'
 	. dirname(plugin_basename(__FILE__)));
 
-$simple_graph_version		= "1.0.2";
+$simple_graph_version		= "1.0.5";
 $simple_graph_db_version	= "1.0";
 
 function widget_pjm_graph_init() {
@@ -29,7 +29,9 @@ function widget_pjm_graph_init() {
 				'bg_col' => 'FFFFFF', 'fg_col' => '000000', 'line_col' => '0000FF',
 				'bg_line_col' => 'CCCCFF', 'trend_line_col' => '88FF88', 'target_line_col' => 'FF0000',
 				'date_fmt' => 'y/m/d', 'show_text' => TRUE, 'show_title' => TRUE, 'show_trend' => FALSE,
-				'show_target' => FALSE, 'show_hl_graph' => TRUE, 'user_id' => 1, 'table_id' => 1 );
+				'show_target' => FALSE, 'show_hl_graph' => TRUE, 'user_id' => 1, 'table_id' => 1, 'gchart' => FALSE );
+		if (!isset($options[$number]['gchart']))
+			$options[$number]['gchart'] = FALSE;
 		$title = $options[$number]['title'];
 		if ($title=="") 
 			$title = null;
@@ -50,7 +52,8 @@ function widget_pjm_graph_init() {
 					echo $before_title
 					. pjm_graph_tags($title,$tags)
 					. $after_title; } ?>
-					<p><?php pjm_graph($number); ?></p>
+					<p><?php /*pjm_graph($number);*/
+					pjm_graph($number,$options[$number]['width'],$options[$number]['height'],$options[$number]['show_trend'],$options[$number]['show_target'],FALSE,FALSE,FALSE,$options[$number]['user_id'],$options[$number]['table_id'],FALSE,$options[$number]['gchart']); ?></p>
 					<?php if ($options[$number]['show_text']) echo pjm_graph_tags($options[$number]['text'],$tags); ?>
 			<?php echo $after_widget; ?>
 		<?php
@@ -115,7 +118,9 @@ function widget_pjm_graph_init() {
 				'bg_col' => 'FFFFFF', 'fg_col' => '000000', 'line_col' => '0000FF',
 				'bg_line_col' => 'CCCCFF', 'trend_line_col' => '88FF88', 'target_line_col' => 'FF0000',
 				'date_fmt' => 'y/m/d', 'show_text' => TRUE, 'show_title' => TRUE, 'show_trend' => FALSE,
-				'show_target' => FALSE, 'show_hl_graph' => TRUE, 'user_id' => 1, 'table_id' => 1 );
+				'show_target' => FALSE, 'show_hl_graph' => TRUE, 'user_id' => 1, 'table_id' => 1, 'gchart' => FALSE );
+		if (isset($options[$number]['gchart']))
+			$options[$number]['gchart'] = FALSE;
 		$newoptions = $options;
 		if ($_POST['pjm_graph_submit-'.$number]) {
 			$newoptions[$number]['title']	= strip_tags(stripslashes($_POST['pjm_graph_title-'.$number]));
@@ -138,6 +143,7 @@ function widget_pjm_graph_init() {
 			$newoptions[$number]['show_target']	= isset($_POST['pjm_graph_show_target-'.$number]) ? TRUE : FALSE;
 			$newoptions[$number]['show_trend']	= isset($_POST['pjm_graph_show_trend-'.$number]) ? TRUE : FALSE;
 			$newoptions[$number]['show_hl_graph'] = isset($_POST['pjm_graph_show_hl_graph-'.$number]) ? TRUE : FALSE;
+			$newoptions[$number]['gchart'] = isset($_POST['pjm_graph_use_gchart-'.$number]) ? TRUE : FALSE;
 		}
 		if ($newoptions != $options) {
 			$options = $newoptions;
@@ -170,6 +176,7 @@ function widget_pjm_graph_init() {
 		echo '<label for="pjm_graph_show_trend-'.$number.'">' . __('Show trend line:') .' <input type="checkbox" id="pjm_graph_show_trend-'.$number.'" name="pjm_graph_show_trend-'.$number.'" ' . ($options[$number]['show_trend'] ? 'checked="checked"' : '') . ' /></label><br />';
 		echo '<label for="pjm_graph_show_target-'.$number.'">' . __('Show target line:') .' <input type="checkbox" id="pjm_graph_show_target-'.$number.'" name="pjm_graph_show_target-'.$number.'" ' . ($options[$number]['show_target'] ? 'checked="checked"' : '') . ' /></label><br />';
 		echo '<label for="pjm_graph_show_hl_graph-'.$number.'">' . __('Show high/low in graph:') .' <input type="checkbox" id="pjm_graph_show_hl_graph-'.$number.'" name="pjm_graph_show_hl_graph-'.$number.'" ' . ($options[$number]['show_hl_graph'] ? 'checked="checked"' : '') . ' /></label><br />';
+		echo '<label for="pjm_graph_use_gchart-'.$number.'">' . __('Use Google Chart API for Rendering:') .' <input type="checkbox" id="pjm_graph_use_gchart-'.$number.'" name="pjm_graph_use_gchart-'.$number.'" ' . ($options[$number]['gchart'] ? 'checked="checked"' : '') . ' /></label><br />';
 		echo '<label for="pjm_graph_target-'.$number.'">' . __('Target:') .' <input style="width:80px;" id="pjm_graph_target-'.$number.'" name="pjm_graph_target-'.$number.'" type="text" value="' . $options[$number]['target'] . '" /></label><br />';
 		echo '<label for="pjm_graph_width-'.$number.'">' . __('Width:') .' <input style="width:80px;" id="pjm_graph_width-'.$number.'" name="pjm_graph_width-'.$number.'" type="text" value="' . $options[$number]['width'] . '" /></label><br />';
 		echo '<label for="pjm_graph_height-'.$number.'">' . __('Height:') .' <input style="width:80px;" id="pjm_graph_height-'.$number.'" name="pjm_graph_height-'.$number.'" type="text" value="' . $options[$number]['height'] . '" /></label><br />';
@@ -278,18 +285,21 @@ else if (function_exists('imagejpeg')) { echo "JPG"; } else { echo "N/A"; } ?>
 }
 add_action('plugins_loaded','widget_pjm_graph_init');
 
-function pjm_graph($number=1,$x=0,$y=0,$trend=FALSE,$target=FALSE,$ytd=FALSE,$lm=FALSE,$wkly=FALSE,$user_id=0,$table_id=0,$only_return_tag=FALSE) {
+function pjm_graph($number=1,$x=0,$y=0,$trend=FALSE,$target=FALSE,$ytd=FALSE,$lm=FALSE,$wkly=FALSE,$user_id=0,$table_id=0,$only_return_tag=FALSE,$use_gchart=FALSE) {
 $options = get_option('pjm_graph_options');
 if (!is_array($options[$number]))
 	$options[$number] = Array('title' => '', 'text' => '', 'width' => 160, 'height' => 120,
 		'bg_col' => 'FFFFFF', 'fg_col' => '000000', 'line_col' => '0000FF',
 		'bg_line_col' => 'CCCCFF', 'trend_line_col' => '88FF88', 'target_line_col' => 'FF0000',
 		'date_fmt' => 'y/m/d', 'show_text' => TRUE, 'show_title' => TRUE, 'show_trend' => FALSE,
-		'show_target' => FALSE, 'show_hl_graph' => TRUE, 'user_id' => 1, 'table_id' => 1 );
+		'show_target' => FALSE, 'show_hl_graph' => TRUE, 'user_id' => 1, 'table_id' => 1, 'gchart' => FALSE );
+if (!isset($options[$number]['gchart']))
+  $options[$number]['gchart'] = FALSE;
 $width = $options[$number]['width'];
 $height = $options[$number]['height'];
 $uid = $options[$number]['user_id'];
 $tid = $options[$number]['table_id'];
+$gchart_enabled = $options[$number]['gchart'] & $use_gchart;
 if ($x!=0) $width = $x;
 if ($y!=0) $height = $y;
 if ($user_id!=0) $uid = $user_id;
@@ -297,14 +307,22 @@ if ($table_id!=0) $tid = $table_id;
 //$siteurl = get_option('siteurl');
 //if ("/"==substr($siteurl,strlen($siteurl)-1)) 
 //	$siteurl = substr($siteurl,0,strlen($siteurl)-1);
-$img_tag = '<img src="'.PJM_GRAPH_PLUGIN_URL.'/grapher/graph.php?n='.$number.'&amp;uid='.$uid.'&amp;tid='.$tid.'&amp;'; 
-	if ($trend) $img_tag .= "t=1&amp;"; 
-	if ($ytd) $img_tag .= "ytd=1&amp;"; 
-	if ($lm) $img_tag .= "lm=1&amp;"; 
-	if ($wkly) $img_tag .= "wkly=1&amp;"; 
-	if ($target) $img_tag .= "l=1&amp;";
-	if ($x!=0) $img_tag .= "w=$width&amp;h=$height"; 
-$img_tag .= '" width="'.$width.'" height="'.$height.'" alt="Graph by www.pasi.fi/simple-graph-wordpress-plugin/" style="border:0;" />';
+$img_tag = NULL;
+if ($gchart_enabled) {
+  $datatype = "t:";
+  require_once('grapher/gchart.php');
+  $img_tag = "<img src=\"http://chart.apis.google.com/chart?chs={$width}x{$height}&amp;chd={$data}&amp;cht=lc&amp;chxt=x,y&amp;chxl={$horizontalaxislabels}{$verticalaxislabels}&amp;";
+  $img_tag .= "&amp;chco=$colors\" alt=\"[Graph by www.pasi.fi/simple-graph-wordpress-plugin/]\" />";
+} else {
+  $img_tag = '<img src="'.PJM_GRAPH_PLUGIN_URL.'/grapher/graph.php?n='.$number.'&amp;uid='.$uid.'&amp;tid='.$tid.'&amp;'; 
+    if ($trend) $img_tag .= "t=1&amp;"; 
+    if ($ytd) $img_tag .= "ytd=1&amp;"; 
+    if ($lm) $img_tag .= "lm=1&amp;"; 
+    if ($wkly) $img_tag .= "wkly=1&amp;"; 
+    if ($target) $img_tag .= "l=1&amp;";
+    if ($x!=0) $img_tag .= "w=$width&amp;h=$height"; 
+  $img_tag .= '" width="'.$width.'" height="'.$height.'" alt="Graph by www.pasi.fi/simple-graph-wordpress-plugin/" />';
+}
 if (!$only_return_tag)
 	echo $img_tag;
 return $img_tag;
