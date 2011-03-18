@@ -1,5 +1,5 @@
 === Plugin Name ===
-Contributors: pacius
+Contributors: pacius, MarkDennehy
 Donate link: http://tinyurl.com/3aths7
 Tags: graph, chart, weight loss, widget, Google Chart API
 Requires at least: 2.0.1
